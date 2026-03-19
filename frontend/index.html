@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Grand Hotel Portal</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            /* Sleek, luxurious dark slate/teal gradient */
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+        }
+        h1 { font-size: 3.5em; margin-bottom: 5px; font-weight: 300; letter-spacing: 2px; }
+        .subtitle { font-size: 1.2em; margin-bottom: 50px; color: #b0c4de; font-weight: 300; }
+        
+        /* Adjusted gap and flex-wrap so 3 cards fit beautifully */
+        .card-container { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; max-width: 1000px; }
+        
+        /* Glassmorphism Card Effect */
+        .portal-card { 
+            background: rgba(255, 255, 255, 0.05); 
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.1); 
+            padding: 50px 30px; 
+            border-radius: 20px; 
+            width: 240px; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: all 0.4s ease; 
+            text-decoration: none; 
+            color: white; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+        
+        .portal-card:hover { 
+            transform: translateY(-15px); 
+            background: rgba(255, 255, 255, 0.1); 
+            border: 1px solid rgba(255,255,255,0.3); 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); 
+        }
+        
+        .icon { font-size: 4.5em; margin-bottom: 20px; }
+        .portal-card h2 { margin: 0 0 10px 0; font-size: 1.8em; font-weight: 500; }
+        .portal-card p { margin: 0; font-size: 1em; color: #a9b7c6; }
+    </style>
+</head>
+<body>
+    <h1>GRAND HOTEL</h1>
+    <p class="subtitle">Select your portal to continue</p>
+    
+    <div class="card-container">
+        <a href="login.html" class="portal-card">
+            <div class="icon">💼</div>
+            <h2>Admin Portal</h2>
+            <p>Manage Rooms & Bookings</p>
+        </a>
+        <a href="food.html" class="portal-card">
+            <div class="icon">🍽️</div>
+            <h2>Food Service</h2>
+            <p>Order Room Service</p>
+        </a>
+        <a href="cleaning.html" class="portal-card">
+            <div class="icon">🧹</div>
+            <h2>Housekeeping</h2>
+            <p>Update Room Status</p>
+        </a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Login</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: sans-serif;
+            /* Using a highly reliable Unsplash image link so it never fails */
+            background-image: url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            width: 320px;
+            text-align: center;
+        }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; background-color: #0d6efd; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>Admin Login</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="admin" required>
+            <input type="password" id="password" placeholder="Admin Password" required>
+            <button type="submit">Login</button>
+        </form>
+        <p id="error-msg" style="color: red; display: none;">Invalid credentials</p>
+    </div>
+    
+    <script src="js/login.js"></script>
+</body>
+</html>
