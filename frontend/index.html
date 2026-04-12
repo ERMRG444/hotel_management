@@ -2,76 +2,722 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Grand Hotel Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grand Hotel - 5-Star Luxury</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            /* Sleek, luxurious dark slate/teal gradient */
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            color: white; 
-        }
-        h1 { font-size: 3.5em; margin-bottom: 5px; font-weight: 300; letter-spacing: 2px; }
-        .subtitle { font-size: 1.2em; margin-bottom: 50px; color: #b0c4de; font-weight: 300; }
-        
-        /* Adjusted gap and flex-wrap so 3 cards fit beautifully */
-        .card-container { display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; max-width: 1000px; }
-        
-        /* Glassmorphism Card Effect */
-        .portal-card { 
-            background: rgba(255, 255, 255, 0.05); 
-            backdrop-filter: blur(15px); 
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.1); 
-            padding: 50px 30px; 
-            border-radius: 20px; 
-            width: 240px; 
-            text-align: center; 
-            cursor: pointer; 
-            transition: all 0.4s ease; 
-            text-decoration: none; 
-            color: white; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        /* LANDING PAGE SPECIFIC OVERRIDES */
+        .hero {
+            position: relative;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(5,5,5,0.9)), url('hero.png') center/cover no-repeat !important;
+            padding: 180px 20px 120px;
+            text-align: center;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
         }
         
-        .portal-card:hover { 
-            transform: translateY(-15px); 
-            background: rgba(255, 255, 255, 0.1); 
-            border: 1px solid rgba(255,255,255,0.3); 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4); 
+        /* Add a glowing glass mesh to the hero to make it stunning */
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% 100%, rgba(0, 242, 254, 0.15) 0%, transparent 60%);
+            pointer-events: none;
         }
         
-        .icon { font-size: 4.5em; margin-bottom: 20px; }
-        .portal-card h2 { margin: 0 0 10px 0; font-size: 1.8em; font-weight: 500; }
-        .portal-card p { margin: 0; font-size: 1em; color: #a9b7c6; }
+        /* RESTORE LEGACY BANNER */
+        .legacy-banner {
+            background: linear-gradient(135deg, rgba(5,5,5,0.9), rgba(15,15,30,0.9)), url('https://images.unsplash.com/photo-1551882547-ff40c0d5b5df?auto=format&fit=crop&w=1600&q=80') center/cover;
+            background-blend-mode: overlay;
+            padding: 80px 10%;
+            color: #fff;
+            text-align: center;
+            border-top: 1px solid var(--primary);
+            border-bottom: 1px solid var(--primary);
+            box-shadow: inset 0 0 50px rgba(0,242,254,0.1);
+        }
+        .legacy-banner h2, .legacy-banner p, .legacy-banner h3, .legacy-banner h4 { color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .legacy-banner .stat-icon { color: var(--primary); }
+
+        /* MODAL STYLES (Restored for Book Now) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            z-index: 9999; display: none; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: var(--bg-card); padding: 40px; border-radius: var(--radius-lg); width: 90%; max-width: 500px;
+            position: relative; border: 1px solid var(--border-color); box-shadow: 0 10px 40px rgba(0, 242, 254, 0.15);
+            animation: fadeIn 0.3s;
+        }
+        .close-btn { position: absolute; top: 20px; right: 20px; background: transparent; border: none; font-size: 2rem; color: var(--text-muted); cursor: pointer; transition: color 0.3s; padding: 0 10px; }
+        .close-btn:hover { color: #ef4444; }
+
+        /* FEATURE ICONS RESTORE */
+        .feature-icon { width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 20px; box-shadow: inset 0 0 10px rgba(255,255,255,0.05); }
+        .icon-orange { background: rgba(234, 88, 12, 0.15); color: #ea580c; border: 1px solid rgba(234, 88, 12, 0.3); }
+        .icon-teal   { background: rgba(20, 184, 166, 0.15); color: #14b8a6; border: 1px solid rgba(20, 184, 166, 0.3); }
+        .icon-gray   { background: rgba(100, 116, 139, 0.15); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.3); }
+        .icon-purple { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.3); }
+        .icon-red    { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        
+        /* PAYMENT TABS */
+        .payment-tab { flex: 1; text-align: center; padding: 12px; cursor: pointer; color: var(--text-muted); font-weight: bold; transition: 0.3s; }
+        .payment-tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); margin-bottom: -2px; }
+        .payment-tab:hover { color: #fff; }
+        
+        /* ADJUSTING CARDS TO GLASSMORPHISM */
+        .feature-card, .room-card, .testimonial-card, .stat-card {
+            background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+        .feature-card { padding: 40px; border-radius: var(--radius-lg); }
+        .feature-card h3 { font-size: 1.5rem; margin-bottom: 15px; }
+        .feature-card p { color: var(--text-muted); line-height: 1.6; }
+        
+        .stat-card { padding: 30px; text-align: center; border-radius: var(--radius-lg); }
+        .stat-card h3 { font-size: 2.5rem; color: var(--primary); margin: 15px 0 5px; }
+        
+        .feature-card:hover, .room-card:hover, .testimonial-card:hover {
+            border-color: var(--primary); box-shadow: 0 10px 30px rgba(0,242,254,0.1); transform: translateY(-5px);
+        }
+        
+        /* SPACING & LAYOUT RESTORE */
+        .section { padding: 100px 5%; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-header h4 { color: var(--primary); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+        .section-header h2 { font-size: 2.8rem; margin-bottom: 20px; }
+        .section-header p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+        
+        /* TESTIMONIAL FIXES */
+        .testimonial-card { padding: 30px; border-radius: var(--radius-lg); display: flex; flex-direction: column; height: 100%; }
+        .testimonial-stars { color: #f59e0b; margin-bottom: 20px; font-size: 1.2rem; }
+        .testimonial-text { font-style: italic; color: var(--text-main); line-height: 1.8; margin-bottom: 30px; flex-grow: 1; }
+        .testimonial-author { display: flex; align-items: center; gap: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; }
+        .author-avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; color: #fff; }
+        .author-info h4 { margin: 0 0 5px 0; font-size: 1.1rem; }
+        .author-info p { margin: 0; color: var(--text-muted); font-size: 0.9rem; }
+        
+        /* ROOM CARD FIXES */
+        .room-img { width: 100%; height: 250px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; position: relative; overflow: hidden; }
+        .room-img img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+        .room-card:hover .room-img img { transform: scale(1.05); }
+        .room-price-badge { position: absolute; bottom: 15px; right: 15px; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); color: var(--primary); padding: 8px 15px; border-radius: 20px; font-weight: bold; border: 1px solid var(--border-color); }
+        .room-details { padding: 25px; display: flex; flex-direction: column; height: calc(100% - 250px); }
+        .room-amenities { list-style: none; padding: 0; margin: 15px 0 25px 0; color: var(--text-muted); font-size: 0.9rem; }
+        .room-amenities li { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .room-amenities li i { color: var(--primary); font-size: 0.5rem; }
     </style>
 </head>
 <body>
-    <h1>GRAND HOTEL</h1>
-    <p class="subtitle">Select your portal to continue</p>
-    
-    <div class="card-container">
-        <a href="login.html" class="portal-card">
-            <div class="icon">💼</div>
-            <h2>Admin Portal</h2>
-            <p>Manage Rooms & Bookings</p>
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <a href="#" class="logo">
+            <div style="background:var(--primary); color:#fff; border-radius:8px; padding:6px 10px;">
+                <i class="fa-solid fa-hotel"></i>
+            </div>
+            Grand Hotel
         </a>
-        <a href="food.html" class="portal-card">
-            <div class="icon">🍽️</div>
-            <h2>Food Service</h2>
-            <p>Order Room Service</p>
-        </a>
-        <a href="cleaning.html" class="portal-card">
-            <div class="icon">🧹</div>
-            <h2>Housekeeping</h2>
-            <p>Update Room Status</p>
-        </a>
+        <div class="nav-links">
+            <a href="#suites">Rooms</a>
+            <a href="#amenities">Amenities</a>
+            <a href="#reviews">Reviews</a>
+            <a href="#">Contact</a>
+            <a href="login.html" class="btn btn-primary" style="margin-left:10px;">Book Now</a>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <header class="hero">
+        <div class="badge">
+            <i class="fa-solid fa-star"></i> 5-Star Luxury Experience
+        </div>
+        
+        <h1>Welcome to <span class="text-primary">Grand Hotel</span></h1>
+        <p>Experience unparalleled luxury and comfort in the heart of the city. Where elegance meets exceptional service, creating unforgettable moments.</p>
+
+        <div class="hero-buttons">
+            <a href="#suites" class="btn btn-primary"><i class="fa-solid fa-calendar-alt"></i> Book Your Stay</a>
+            <a href="#suites" class="btn btn-outline">Explore Rooms</a>
+        </div>
+        
+        <div style="margin-top: 60px; color: var(--text-muted); font-size: 0.95rem; display: flex; align-items: center; gap: 12px;">
+            <div style="color: var(--primary);">
+                <i class="fa-solid fa-star"></i>
+                <i class="fa-solid fa-star"></i>
+                <i class="fa-solid fa-star"></i>
+                <i class="fa-solid fa-star"></i>
+                <i class="fa-solid fa-star"></i>
+            </div>
+            4.9 from 2,500+ guests
+        </div>
+    </header>
+
+    <!-- AMENITIES SECTION -->
+    <section id="amenities" class="section">
+        <div class="section-header">
+            <h4>Amenities</h4>
+            <h2>World-Class Facilities</h2>
+            <p>Every detail designed to ensure your comfort and create an exceptional stay</p>
+        </div>
+        
+        <div class="grid-3">
+            <div class="feature-card">
+                <div class="feature-icon icon-orange"><i class="fa-solid fa-bed"></i></div>
+                <h3>Luxurious Rooms</h3>
+                <p>Elegantly designed rooms and suites with premium amenities, plush bedding, and stunning city or garden views.</p>
+            </div>
+            <div class="feature-card active">
+                <div class="feature-icon icon-orange"><i class="fa-solid fa-utensils"></i></div>
+                <h3 class="text-primary">Fine Dining</h3>
+                <p>Experience world-class cuisine at our signature restaurant featuring international and local specialties.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon icon-teal"><i class="fa-solid fa-water"></i></div>
+                <h3>Spa & Wellness</h3>
+                <p>Rejuvenate your senses at our luxurious spa offering massages, treatments, and wellness therapies.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon icon-gray"><i class="fa-solid fa-dumbbell"></i></div>
+                <h3>Fitness Center</h3>
+                <p>State-of-the-art fitness facilities with modern equipment, personal trainers, and yoga classes.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon icon-purple"><i class="fa-solid fa-wifi"></i></div>
+                <h3>High-Speed WiFi</h3>
+                <p>Complimentary high-speed internet access throughout the hotel for seamless connectivity.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon icon-red"><i class="fa-solid fa-glass-martini-alt"></i></div>
+                <h3>Rooftop Bar</h3>
+                <p>Unwind at our elegant rooftop bar with panoramic views, craft cocktails, and live entertainment.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- SUITES SECTION -->
+    <section id="suites" class="section" style="background:var(--bg-card); border-top:1px solid var(--border-color); border-bottom:1px solid var(--border-color);">
+        <div class="section-header">
+            <h4>Accommodations</h4>
+            <h2>Luxury Rooms & Suites</h2>
+            <p>Choose from our carefully designed rooms and suites, each offering comfort and elegance</p>
+        </div>
+        
+        <div id="roomContainer" class="grid-3">
+            <p class="text-center" style="grid-column: span 3; color: var(--text-muted); padding: 50px;">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Fetching Live Availability...
+            </p>
+        </div>
+    </section>
+
+    <!-- LEGACY BANNER -->
+    <section class="legacy-banner">
+        <h2 style="font-size:3rem; margin-bottom:10px;">A Legacy of Excellence</h2>
+        <p style="font-size:1.2rem; margin-bottom:50px; opacity:0.9;">Decades of creating memorable experiences for guests from around the world</p>
+        
+        <div class="grid-4" style="text-align:left;">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-user-friends"></i></div>
+                <h3>50K+</h3>
+                <h4>Happy Guests</h4>
+                <p>Served annually</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-award"></i></div>
+                <h3>15+</h3>
+                <h4>Awards Won</h4>
+                <p>Excellence in hospitality</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-map-marker-alt"></i></div>
+                <h3>250+</h3>
+                <h4>Luxury Rooms</h4>
+                <p>And suites</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <h3>4.9/5</h3>
+                <h4>Guest Rating</h4>
+                <p>Average review score</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- REVIEWS SECTION -->
+    <section id="reviews" class="section">
+        <div class="section-header">
+            <h4>Testimonials</h4>
+            <h2>What Our Guests Say</h2>
+            <p>Read reviews from our valued guests who experienced the Grand Hotel difference</p>
+        </div>
+        
+        <div class="grid-3">
+            <div class="testimonial-card">
+                <div class="testimonial-stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+                <p class="testimonial-text">"Absolutely stunning hotel! The rooms were immaculate, the staff was incredibly attentive, and the rooftop bar had the most amazing views. Will definitely be back!"</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar" style="background:#ea580c;">ET</div>
+                    <div class="author-info">
+                        <h4>Emma Thompson</h4>
+                        <p>London, UK</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+                <p class="testimonial-text">"From check-in to check-out, everything was perfect. The spa treatments were divine and the restaurant exceeded all expectations. A truly 5-star experience."</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar" style="background:#ea580c;">MC</div>
+                    <div class="author-info">
+                        <h4>Michael Chen</h4>
+                        <p>Singapore</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-stars">
+                    <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i>
+                </div>
+                <p class="testimonial-text">"Grand Hotel lives up to its name! The suite was luxurious, the amenities top-notch, and the location couldn't be better. Highly recommend for a special getaway."</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar" style="background:#d97706;">SR</div>
+                    <div class="author-info">
+                        <h4>Sofia Rodriguez</h4>
+                        <p>Barcelona, Spain</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACT & FOOTER SECTION -->
+    <section id="contact" class="section" style="background:var(--bg-dark); border-top:1px solid var(--border-color);">
+        <div class="section-header">
+            <h4>Get In Touch</h4>
+            <h2>Contact Us</h2>
+            <p>We're here to assist you with any inquiries or special requests for your upcoming stay.</p>
+        </div>
+        
+        <div style="max-width: 800px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 30px; justify-content: center;">
+            <div class="feature-card" style="flex: 1; min-width: 300px; text-align: center;">
+                <div class="feature-icon icon-teal" style="margin: 0 auto 20px;"><i class="fa-solid fa-phone"></i></div>
+                <h3>Phone</h3>
+                <p style="font-size: 1.2rem; color: var(--text-main); font-weight: bold; margin-top: 10px;">+91 9510264073</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Available 24/7 for support</p>
+            </div>
+            
+            <div class="feature-card" style="flex: 1; min-width: 300px; text-align: center;">
+                <div class="feature-icon icon-purple" style="margin: 0 auto 20px;"><i class="fa-solid fa-envelope"></i></div>
+                <h3>Email</h3>
+                <p style="font-size: 1.2rem; color: var(--text-main); font-weight: bold; margin-top: 10px;">vinitchaudhariv2@gmail.com</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">We typically reply within 2 hours</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer style="text-align: center; padding: 40px 20px; border-top: 1px solid var(--border-color); color: var(--text-muted);">
+        <p>&copy; 2026 Grand Hotel. All rights reserved.</p>
+    </footer>
+
+    <!-- BOOKING MODAL -->
+    <div id="bookingModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <h3 id="modalTitle" style="color:var(--primary); font-size:1.8rem; margin-bottom:10px;">Reserve</h3>
+            <p id="modalPriceLabel" style="font-size:1.2rem; font-weight:700; margin-bottom:24px; color:var(--text-main);"></p>
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Check-in</label>
+                    <input type="date" id="checkInDate" class="form-control" onchange="handleCheckInChange()" style="color-scheme: dark;">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Check-out</label>
+                    <input type="date" id="checkOutDate" class="form-control" onchange="calculateTotal()" style="color-scheme: dark;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="guestName" class="form-control" placeholder="John Doe">
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="text" id="guestPhone" class="form-control" placeholder="9876543210" maxlength="10" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)">
+            </div>
+            <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:10px;" onclick="confirmBooking()">Continue to Payment</button>
+        </div>
     </div>
+
+    <!-- PAYMENT MODAL -->
+    <div id="paymentModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <button class="close-btn" onclick="closePaymentModal()">&times;</button>
+            <h3 style="color:var(--primary); font-size:1.8rem; margin-bottom:10px;"><i class="fa-solid fa-credit-card"></i> Checkout</h3>
+            <p id="paymentAmountLabel" style="font-size:1.2rem; font-weight:700; margin-bottom:24px; color:var(--text-main);"></p>
+            
+            <div style="display: flex; border-bottom: 2px solid rgba(255,255,255,0.1); margin-bottom: 25px;">
+                <div id="tabCard" class="payment-tab active" onclick="switchPaymentTab('card')"><i class="fa-solid fa-credit-card"></i> Card</div>
+                <div id="tabUpi" class="payment-tab" onclick="switchPaymentTab('upi')"><i class="fa-brands fa-google-pay"></i> UPI</div>
+            </div>
+
+            <div id="cardPaymentView">
+                <div class="form-group">
+                    <label>Cardholder Name</label>
+                    <input type="text" id="cardName" class="form-control" placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Card Number</label>
+                    <input type="text" id="cardNumber" class="form-control" placeholder="xxxx xxxx xxxx xxxx" maxlength="19">
+                </div>
+                <div style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 2;">
+                        <label>Expiry Date</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="cardMonth" class="form-control" style="padding: 10px; flex:1;">
+                                <option value="" disabled selected>MM</option>
+                                <option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option>
+                                <option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                            </select>
+                            <select id="cardYear" class="form-control" style="padding: 10px; flex:1;">
+                                <option value="" disabled selected>YYYY</option>
+                                <!-- Dynamically populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>CVV</label>
+                        <input type="text" id="cardCvv" class="form-control" placeholder="123" maxlength="3" oninput="this.value = this.value.replace(/\\D/g, '')">
+                    </div>
+                </div>
+            </div>
+
+            <div id="upiPaymentView" style="display: none; text-align: center;">
+                <p style="color:var(--text-muted); margin-bottom: 15px;">Scan to pay via Paytm, PhonePe, or GPay</p>
+                <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=vinitchaudhariv2-1@okhdfcbank%26pn=vinit%20chaudhari" alt="UPI QR Code" style="width: 200px; height: 200px;">
+                </div>
+                <p style="font-weight: bold; color: var(--primary);">UPI ID: vinitchaudhariv2-1@okhdfcbank</p>
+            </div>
+
+            <button id="btnProceedPayment" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:20px; font-size: 1.1em; padding: 15px;" onclick="processPayment()">
+                <i class="fa-solid fa-lock" style="margin-right: 8px;"></i> Proceed to Pay
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN SCRIPT -->
+    <script>
+        let currentRoom = null;
+        let globalRoomsData = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchRooms();
+            // Dynamically populate card years (Current Year + 15 years)
+            let yearSelect = document.getElementById('cardYear');
+            if(yearSelect) {
+                let currentYear = new Date().getFullYear();
+                for(let i = 0; i < 15; i++) {
+                    let opt = document.createElement('option');
+                    opt.value = currentYear + i;
+                    opt.innerHTML = currentYear + i;
+                    yearSelect.appendChild(opt);
+                }
+            }
+        });
+
+        const formatDate = (date) => {
+            let d = date.getDate().toString().padStart(2, '0');
+            let m = (date.getMonth() + 1).toString().padStart(2, '0');
+            let y = date.getFullYear();
+            return `${y}-${m}-${d}`;
+        };
+
+        function fetchRooms() {
+            fetch("http://127.0.0.1:5000/rooms")
+            .then(res => res.json())
+            .then(data => {
+                globalRoomsData = data;
+                
+                // Group by room type for the UI
+                let types = {};
+                data.forEach(r => {
+                    if(!types[r.type]) {
+                        types[r.type] = {
+                            metadata: r, 
+                            available_count: 0,
+                            first_available_id: null
+                        };
+                    }
+                    if(r.status === 'AVAILABLE') {
+                        types[r.type].available_count++;
+                        if(!types[r.type].first_available_id) {
+                            types[r.type].first_available_id = r.id; // Save this ID to actually book it later
+                        }
+                    }
+                });
+                
+                // Render the categories
+                renderRooms(Object.values(types));
+            }).catch(e => {
+                document.getElementById('roomContainer').innerHTML = "<p class='text-red text-center w-100'>Error connecting to server. Is the backend running?</p>";
+            });
+        }
+
+        function renderRooms(roomTypes) {
+            let html = "";
+            roomTypes.forEach(cat => {
+                let r = cat.metadata;
+                let available = cat.available_count;
+                let badge = `<div class="room-price-badge">₹${r.current_price}/night</div>`;
+                
+                let details = r.type.includes("Suite") 
+                    ? `<ul class="room-amenities"><li><i>●</i> Separate Living Area</li><li><i>●</i> Jacuzzi & Premium Views</li><li><i>●</i> ${r.area || '55'} sqm</li><li><i>●</i> Premium Amenities</li></ul>`
+                    : `<ul class="room-amenities"><li><i>●</i> King Size Bed</li><li><i>●</i> City View</li><li><i>●</i> ${r.area || '32'} sqm</li><li><i>●</i> Free WiFi</li></ul>`;
+
+                let btnHtml = '';
+                if(available > 0) {
+                    btnHtml = `<button class="btn btn-primary" style="width:100%; border-radius: 8px;" onclick="openModal(${cat.first_available_id})">Book Now</button>
+                               <p style="text-align:center; margin-top:12px; font-size:0.9em; font-weight:600; color:var(--text-main);"><i class="fa-solid fa-door-open text-primary"></i> ${available} rooms left!</p>`;
+                } else {
+                    btnHtml = `<button class="btn btn-outline text-muted" style="width:100%; cursor:not-allowed; border-radius: 8px;" disabled>Sold Out</button>
+                               <p style="text-align:center; margin-top:12px; font-size:0.9em; color:#ef4444;"><i class="fa-solid fa-hourglass-empty"></i> No availability today</p>`;
+                }
+
+                html += `
+                    <div class="room-card" style="display:flex; flex-direction:column;">
+                        <div class="room-img">
+                            <img src="${r.image}" alt="${r.type}">
+                            ${badge}
+                        </div>
+                        <div class="room-details" style="flex:1; display:flex; flex-direction:column;">
+                            <h3>${r.type}</h3>
+                            <p>${r.amenities ? r.amenities.substring(0, 80) + '...' : 'Elegant and comfortable room with modern amenities.'}</p>
+                            ${details}
+                            <div style="margin-top:auto;">
+                                ${btnHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('roomContainer').innerHTML = html;
+        }
+
+        let calculatedNights = 1;
+
+        function handleCheckInChange() {
+            let inInput = document.getElementById('checkInDate');
+            let outInput = document.getElementById('checkOutDate');
+            
+            let inDate = new Date(inInput.value);
+            if (!isNaN(inDate)) {
+                let nextDate = new Date(inDate);
+                nextDate.setDate(nextDate.getDate() + 1);
+                
+                let nextDateStr = formatDate(nextDate);
+                outInput.value = nextDateStr;
+                outInput.min = nextDateStr;
+            }
+            calculateTotal();
+        }
+        
+        function calculateTotal() {
+            if(!currentRoom) return;
+            
+            let inDate = new Date(document.getElementById('checkInDate').value);
+            let outDate = new Date(document.getElementById('checkOutDate').value);
+            
+            calculatedNights = 1; // Default
+            
+            if(!isNaN(inDate) && !isNaN(outDate)) {
+                let diffTime = outDate - inDate;
+                let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if(diffDays > 0) calculatedNights = diffDays;
+            }
+            
+            let total = calculatedNights * currentRoom.current_price;
+            document.getElementById('modalPriceLabel').innerText = `₹${total} (${calculatedNights} night${calculatedNights > 1 ? 's' : ''} @ ₹${currentRoom.current_price}/night)`;
+        }
+
+        function openModal(roomId) {
+            let roomObj = globalRoomsData.find(x => x.id === roomId);
+            if(!roomObj) return;
+            currentRoom = roomObj;
+            document.getElementById('modalTitle').innerText = roomObj.type;
+            
+            let today = new Date();
+            let tmrw = new Date(); tmrw.setDate(today.getDate() + 1);
+            let todayStr = formatDate(today);
+            let tmrwStr = formatDate(tmrw);
+            
+            let inInput = document.getElementById('checkInDate');
+            let outInput = document.getElementById('checkOutDate');
+            
+            inInput.value = todayStr;
+            inInput.min = todayStr;
+            outInput.value = tmrwStr;
+            outInput.min = tmrwStr;
+            
+            calculateTotal(); // Will set modalPriceLabel and calculatedNights
+            
+            document.getElementById('bookingModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('bookingModal').style.display = 'none';
+        }
+
+        function confirmBooking() {
+            let guestName = document.getElementById('guestName').value;
+            let guestPhone = document.getElementById('guestPhone').value;
+            let checkIn = document.getElementById('checkInDate').value;
+            let checkOut = document.getElementById('checkOutDate').value;
+
+            if(!guestName || !guestPhone) {
+                alert("Please enter your name and phone number."); return;
+            }
+
+            if(guestPhone.length !== 10) {
+                alert("Please enter a valid 10-digit phone number."); return;
+            }
+            
+            let inDate = new Date(checkIn);
+            let outDate = new Date(checkOut);
+            
+            if(isNaN(inDate) || isNaN(outDate) || outDate <= inDate) {
+                alert("Please select valid check-in and check-out dates."); return;
+            }
+            
+            let todayCheck = new Date();
+            todayCheck.setHours(0,0,0,0);
+            if(inDate < todayCheck) {
+                alert("Cannot book for dates in the past."); return;
+            }
+
+            let total_amount = calculatedNights * currentRoom.current_price;
+
+            let payload = {
+                name: guestName,
+                phone: guestPhone,
+                room_id: currentRoom.id,
+                check_in: checkIn,
+                check_out: checkOut,
+                total_amount: total_amount
+            };
+
+            closeModal();
+            openPaymentModal('booking', `₹${total_amount}`, payload);
+        }
+
+        // --- PAYMENT GATEWAY LOGIC ---
+        let activePaymentMode = 'card';
+        let currentPaymentPayload = null;
+        let paymentFlowContext = '';
+
+        document.getElementById('cardNumber')?.addEventListener('input', function (e) {
+            e.target.value = e.target.value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim();
+        });
+
+        function openPaymentModal(context, amountLabel, payload) {
+            paymentFlowContext = context;
+            currentPaymentPayload = payload;
+            document.getElementById('paymentAmountLabel').innerText = `Total: ${amountLabel}`;
+            document.getElementById('paymentModal').style.display = 'flex';
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+        }
+
+        function switchPaymentTab(tab) {
+            activePaymentMode = tab;
+            document.querySelectorAll('.payment-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            
+            if(tab === 'card') {
+                document.getElementById('cardPaymentView').style.display = 'block';
+                document.getElementById('upiPaymentView').style.display = 'none';
+            } else {
+                document.getElementById('cardPaymentView').style.display = 'none';
+                document.getElementById('upiPaymentView').style.display = 'block';
+            }
+        }
+
+        function processPayment() {
+            if(activePaymentMode === 'card') {
+                let name = document.getElementById('cardName').value;
+                let num = document.getElementById('cardNumber').value.replace(/\s+/g, '');
+                let cvv = document.getElementById('cardCvv').value;
+                let monthVal = document.getElementById('cardMonth').value;
+                let yearVal = document.getElementById('cardYear').value;
+                
+                if(!name || num.length !== 16 || !/^\d{3}$/.test(cvv)) {
+                    alert("Please correctly fill all Card payment details. Ensure CVV is exactly 3 digits.");
+                    return;
+                }
+
+                if(!monthVal || !yearVal) {
+                    alert("Please select the card's expiry month and year.");
+                    return;
+                }
+
+                let month = parseInt(monthVal);
+                let year = parseInt(yearVal);
+                let currentDate = new Date();
+                let currentMonth = currentDate.getMonth() + 1;
+                let currentYear = currentDate.getFullYear();
+
+                if (year < currentYear || (year === currentYear && month < currentMonth)) {
+                    alert("Your card has expired. Please use a valid card or update the expiry date.");
+                    return;
+                }
+            }
+
+            let btn = document.getElementById('btnProceedPayment');
+            let ogText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = ogText;
+                btn.disabled = false;
+                if(paymentFlowContext === 'booking') { executeBookingApi(); }
+            }, 1500);
+        }
+
+        function executeBookingApi() {
+            fetch("http://127.0.0.1:5000/book", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(currentPaymentPayload)
+            }).then(async res => {
+                let data = await res.json();
+                if(!res.ok || data.error) {
+                    throw new Error(data.error || "Failed to book room.");
+                }
+                return data;
+            }).then(data => {
+                let msg = "✅ Payment Successful & Booking Confirmed!\n\nWe look forward to hosting you at the Grand Hotel.";
+                // We'll show the login info if it's securely returned
+                if(data.username) {
+                    msg += "\n\nYour Portal Login:\nUsername: " + data.username + "\nPassword: " + data.password;
+                }
+                alert(msg);
+                closePaymentModal();
+                fetchRooms();
+                window.location.href = "login.html";
+            }).catch(e => {
+                alert("Error booking room: " + e.message);
+                closePaymentModal();
+            });
+        }
+    </script>
 </body>
 </html>

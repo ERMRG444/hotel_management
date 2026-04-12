@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Operations - Grand Hotel</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .split-dashboard { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 30px; }
+        .ops-column { background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 25px; min-height: 70vh; display: flex; flex-direction: column; gap: 20px;}
+        .board-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
+        
+        .task-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; transition: 0.3s; position: relative;}
+        .task-card:hover { transform: translateY(-5px); border-color: var(--gold); }
+        .task-card.high-priority { border-left: 4px solid #e74c3c; box-shadow: 0 4px 15px rgba(231,76,60,0.05); }
+        .task-card.food-priority { border-left: 4px solid #f39c12; box-shadow: 0 4px 15px rgba(243,156,18,0.05); }
+        .task-card.maint-priority { border-left: 4px solid #8b5cf6; box-shadow: 0 4px 15px rgba(139,92,246,0.05); }
+        .task-card.done { opacity: 0.5; border-left: 4px solid #2ecc71; pointer-events: none; filter: grayscale(50%); }
+
+        /* Smooth UI Scrollbars for Kanban Columns */
+        .ops-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-right: 5px; }
+        .ops-list::-webkit-scrollbar { width: 6px; }
+        .ops-list::-webkit-scrollbar-track { background: transparent; }
+        .ops-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .ops-list::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body>
+    <nav class="navbar" style="background: rgba(5,5,5,0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-color); position: fixed;">
+        <a href="#" class="logo">
+            <div style="background:var(--primary); color:#000; border-radius:8px; padding:6px 10px;">
+                <i class="fa-solid fa-users-gear"></i>
+            </div>
+            Ground Operations
+        </a>
+        <div class="nav-links">
+            <span style="color:var(--text-muted); font-size: 0.9em; letter-spacing: 0.5px;"><i class="fa-solid fa-user-shield"></i> <span id="staffNameDisplay">Staff</span></span>
+            <button class="btn btn-outline" style="padding: 6px 15px; font-size: 0.85em;" onclick="loadDashboards()"><i class="fa-solid fa-rotate"></i> Sync</button>
+            <a href="login.html" class="btn btn-outline" style="padding: 6px 15px; font-size: 0.85em; border-color: rgba(231, 76, 60, 0.4); color: #e74c3c;" onclick="localStorage.clear()"><i class="fa-solid fa-sign-out-alt"></i> Off-Duty</a>
+        </div>
+    </nav>
+
+    <div class="container animate-up" style="padding: 110px 5% 50px 5%;">
+        <div style="margin-bottom: 40px;">
+            <h1 style="font-size: 2.2em; font-weight: 800; margin-bottom: 5px; background: linear-gradient(to right, #fff, #a1a1aa); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Live Dispatch Hub</h1>
+            <p class="text-muted" style="font-size: 1.05em;">Manage active housekeeping requests and in-room dining deliveries instantly.</p>
+        </div>
+
+        <div class="split-dashboard">
+            <!-- HOUSEKEEPING KANBAN -->
+            <div class="ops-column">
+                <div class="board-header">
+                    <h3 style="color:#e74c3c; margin:0;"><i class="fa-solid fa-broom"></i> Housekeeping Requests</h3>
+                    <span class="badge badge-red" id="dirtyCount">0</span>
+                </div>
+                <div id="dirtyRoomsList" class="ops-list">
+                    <p class="text-muted text-center" style="margin-top:40px;">No pending cleanings.</p>
+                </div>
+            </div>
+
+            <!-- IN-ROOM DINING KANBAN -->
+            <div class="ops-column">
+                <div class="board-header">
+                    <h3 style="color:#f39c12; margin:0;"><i class="fa-solid fa-bell-concierge"></i> Kitchen -> Room Deliveries</h3>
+                    <span class="badge badge-gold" id="foodCount">0</span>
+                </div>
+                <div id="foodOrdersList" class="ops-list">
+                    <p class="text-muted text-center" style="margin-top:40px;">No active food orders.</p>
+                </div>
+            </div>
+
+            <!-- MAINTENANCE KANBAN -->
+            <div class="ops-column">
+                <div class="board-header">
+                    <h3 style="color:#8b5cf6; margin:0;"><i class="fa-solid fa-wrench"></i> Facility Maintenance</h3>
+                    <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #8b5cf6;" id="maintCount">0</span>
+                </div>
+                <!-- Issue Logger Form -->
+                <div style="background: rgba(139, 92, 246, 0.05); padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px dashed rgba(139, 92, 246, 0.3);">
+                    <p style="margin: 0 0 10px 0; font-size: 0.85em; color: var(--text-muted);"><i class="fa-solid fa-plus"></i> Log New Issue</p>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="maintRoom" class="form-control" style="width: 80px; padding: 10px;" placeholder="Room">
+                        <input type="text" id="maintDesc" class="form-control" style="flex:1; padding: 10px;" placeholder="What's broken?">
+                    </div>
+                    <button class="btn btn-outline" style="width: 100%; margin-top: 10px; border-color: #8b5cf6; color: #8b5cf6; padding: 10px;" onclick="reportMaintenance(this)">Submit Ticket</button>
+                </div>
+
+                <div id="maintOrdersList" class="ops-list" style="margin-top: 20px;">
+                    <p class="text-muted text-center" style="margin-top:20px;">No pending maintenance.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FRONT DESK TOOLS -->
+        <div class="glass-panel animate-up" style="margin-top: 40px; border-color: rgba(255,255,255,0.1);">
+            <h3 style="margin-bottom: 20px; font-weight: 700;"><i class="fa-solid fa-desktop text-primary"></i> Front Desk Actions</h3>
+            
+            <div class="grid-2">
+                <!-- MANUAL CHECK-IN -->
+                <div style="background: rgba(255,255,255,0.02); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                    <h4 style="margin-bottom: 15px; color: var(--text-main); font-size: 1.2em;"><i class="fa-solid fa-user-plus text-primary"></i> Manual Walk-in Check-in</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label class="text-muted" style="display:block; margin-bottom: 5px; font-size:0.85em;">First Name</label>
+                            <input type="text" id="checkinFirstName" class="form-control" style="padding: 10px;" placeholder="John">
+                        </div>
+                        <div>
+                            <label class="text-muted" style="display:block; margin-bottom: 5px; font-size:0.85em;">Last Name</label>
+                            <input type="text" id="checkinLastName" class="form-control" style="padding: 10px;" placeholder="Doe">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label class="text-muted" style="display:block; margin-bottom: 5px; font-size:0.85em;">Mobile Number</label>
+                            <input type="text" id="checkinMobile" class="form-control" style="padding: 10px;" placeholder="9876543210" maxlength="10" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10)">
+                        </div>
+                        <div>
+                            <label class="text-muted" style="display:block; margin-bottom: 5px; font-size:0.85em;">Assigned Room #</label>
+                            <input type="text" id="checkinRoom" class="form-control" style="padding: 10px;" placeholder="101" oninput="calculateStaffPrice()">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+                        <div>
+                            <label class="text-muted" style="display:block; margin-bottom: 5px; font-size:0.85em;">Check-in Date</label>
+                            <input type="date" id="checkinDate" class="form-control" style="padding: 10px; color-scheme: dark;" onchange="handleStaffCheckInChange()">
+                        </div>
+                        <div>
+                            <label class="text-muted" style="display:block; margin-bottom: 5px; font-size:0.85em;">Check-out Date</label>
+                            <input type="date" id="checkoutDate" class="form-control" style="padding: 10px; color-scheme: dark;" onchange="calculateStaffPrice()">
+                        </div>
+                    </div>
+                    <p id="staffPriceLabel" style="text-align:center; font-weight:bold; color:var(--primary); margin-bottom:15px; display:none;"></p>
+                    <button class="btn btn-primary" style="width: 100%; border-radius: 8px;" onclick="processCheckin(this)"><i class="fa-solid fa-key"></i> Issue Key & Check In</button>
+                </div>
+
+                <!-- PROCESS CHECKOUT -->
+                <div style="background: rgba(255,255,255,0.02); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h4 style="margin-bottom: 15px; color: var(--text-main); font-size: 1.2em;"><i class="fa-solid fa-person-walking-luggage text-primary"></i> Express Checkout</h4>
+                        <p class="text-muted" style="font-size:0.95em; margin-bottom: 20px;">Use this utility to quickly close a guest's reservation bill and automatically dispatch housekeeping to prepare the room for the next guest.</p>
+                        <div style="background: rgba(0,0,0,0.2); padding: 20px; border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1);">
+                            <label class="text-muted" style="display:block; margin-bottom: 8px; font-size:0.95em;">Guest Room Number</label>
+                            <input type="text" id="checkoutRoomNumber" class="form-control" style="padding: 12px 15px;" placeholder="e.g., 101">
+                        </div>
+                    </div>
+                    <button class="btn btn-outline" style="border-color: rgba(231, 76, 60, 0.4); color: #e74c3c; width: 100%; margin-top: 20px; border-radius: 8px;" onclick="processCheckout(this)"><i class="fa-solid fa-door-open"></i> Complete Checkout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const staffName = localStorage.getItem("username") || "Staff";
+        document.getElementById("staffNameDisplay").innerText = staffName;
+
+        if(!localStorage.getItem("username") || localStorage.getItem("userRole") === "guest") {
+            window.location.href = "login.html";
+        }
+        
+        let globalRoomsData = [];
+
+        function loadDashboards() {
+            // LOAD HOUSEKEEPING
+            fetch("http://127.0.0.1:5000/rooms")
+            .then(res => res.json())
+            .then(data => {
+                globalRoomsData = data;
+                let dirty = data.filter(r => r.status === 'DIRTY');
+                document.getElementById('dirtyCount').innerText = dirty.length;
+                let html = "";
+                dirty.forEach(r => {
+                    html += `
+                        <div class="task-card high-priority" id="roomTask-${r.number}">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                                <h4 style="margin:0; font-size:1.2rem;">Suite ${r.number}</h4>
+                                <span class="badge badge-red" style="position:static;">DIRTY</span>
+                            </div>
+                            <p class="text-muted" style="margin-bottom:20px;">Type: ${r.type}</p>
+                            <button class="btn btn-outline" style="width:100%; border-color:#2ecc71; color:#2ecc71;" onclick="markClean('${r.number}', this)"><i class="fa-solid fa-check"></i> Mark as Clean</button>
+                        </div>
+                    `;
+                });
+                if(html) document.getElementById('dirtyRoomsList').innerHTML = html;
+                else document.getElementById('dirtyRoomsList').innerHTML = `<p class="text-muted text-center" style="margin-top:40px;">All rooms are pristine.</p>`;
+            });
+
+            // LOAD FOOD DELIVERIES
+            fetch("http://127.0.0.1:5000/api/staff/food_orders")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('foodCount').innerText = data.length;
+                let html = "";
+                data.forEach(order => {
+                    html += `
+                        <div class="task-card food-priority" id="foodTask-${order.id}">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                                <h4 style="margin:0; font-size:1.2rem;">Suite ${order.room_number}</h4>
+                                <span class="badge badge-gold" style="position:static; background:#f39c12;">PREP</span>
+                            </div>
+                            <p style="color:var(--primary); font-weight:bold; margin-bottom:5px;">Order: ${order.items}</p>
+                            <p class="text-muted" style="font-size:0.85em; margin-bottom:20px;">Guest: ${order.guest_name}</p>
+                            <button class="btn btn-primary" style="width:100%;" onclick="markDelivered(${order.id}, this)"><i class="fa-solid fa-truck-fast"></i> Mark Delivered</button>
+                        </div>
+                    `;
+                });
+                if(html) document.getElementById('foodOrdersList').innerHTML = html;
+                else document.getElementById('foodOrdersList').innerHTML = `<p class="text-muted text-center" style="margin-top:40px;">Kitchen queue clear.</p>`;
+            });
+
+            // LOAD MAINTENANCE TICKETS
+            fetch("http://127.0.0.1:5000/api/staff/maintenance_tickets")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('maintCount').innerText = data.length;
+                let html = "";
+                data.forEach(ticket => {
+                    html += `
+                        <div class="task-card maint-priority" id="maintTask-${ticket.id}">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                                <h4 style="margin:0; font-size:1.2rem;">Suite ${ticket.room_number}</h4>
+                                <span class="badge" style="background: rgba(139, 92, 246, 0.2); color: #8b5cf6; position:static;">OPEN</span>
+                            </div>
+                            <p style="color:#fff; font-weight:bold; margin-bottom:5px;">${ticket.issue_desc}</p>
+                            <p class="text-muted" style="font-size:0.85em; margin-bottom:20px;">By: ${ticket.reported_by}</p>
+                            <button class="btn btn-outline" style="width:100%; border-color:#8b5cf6; color:#8b5cf6;" onclick="resolveMaintenance(${ticket.id}, this)"><i class="fa-solid fa-screwdriver-wrench"></i> Mark Repaired</button>
+                        </div>
+                    `;
+                });
+                if(html) document.getElementById('maintOrdersList').innerHTML = html;
+                else document.getElementById('maintOrdersList').innerHTML = `<p class="text-muted text-center" style="margin-top:20px;">No pending maintenance.</p>`;
+            });
+        }
+
+        function markClean(roomNumber, btnEl) {
+            btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Marking...";
+            fetch('http://127.0.0.1:5000/api/log_cleaning', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ staff_name: staffName, room_number: roomNumber })
+            }).then(res => res.json()).then(res => {
+                let card = document.getElementById(`roomTask-${roomNumber}`);
+                card.classList.add('done');
+                btnEl.innerHTML = "<i class='fa-solid fa-check'></i> Finished";
+                setTimeout(loadDashboards, 1000); // refresh layout
+            });
+        }
+
+        function markDelivered(orderId, btnEl) {
+            btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Completing...";
+            fetch('http://127.0.0.1:5000/api/staff/food_deliver', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: orderId })
+            }).then(res => res.json()).then(res => {
+                let card = document.getElementById(`foodTask-${orderId}`);
+                card.classList.add('done');
+                btnEl.innerHTML = "<i class='fa-solid fa-check'></i> Delivered";
+                setTimeout(loadDashboards, 1000);
+            });
+        }
+
+        function reportMaintenance(btnEl) {
+            let room = document.getElementById('maintRoom').value;
+            let desc = document.getElementById('maintDesc').value;
+            if(!room || !desc) {
+                alert("Please fill both Room and Issue Description.");
+                return;
+            }
+            btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Submitting...";
+            fetch('http://127.0.0.1:5000/api/staff/report_maintenance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ room_number: room, issue_desc: desc, reported_by: staffName })
+            }).then(res => res.json()).then(res => {
+                document.getElementById('maintRoom').value = '';
+                document.getElementById('maintDesc').value = '';
+                btnEl.innerHTML = "Submit Ticket";
+                loadDashboards();
+            });
+        }
+
+        function resolveMaintenance(ticketId, btnEl) {
+            btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Repairing...";
+            fetch('http://127.0.0.1:5000/api/staff/resolve_maintenance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticket_id: ticketId })
+            }).then(res => res.json()).then(res => {
+                let card = document.getElementById(`maintTask-${ticketId}`);
+                card.classList.add('done');
+                btnEl.innerHTML = "<i class='fa-solid fa-check'></i> Finished";
+                setTimeout(loadDashboards, 1000);
+            });
+        }
+
+        function processCheckin(btnEl) {
+            let firstName = document.getElementById('checkinFirstName').value;
+            let lastName = document.getElementById('checkinLastName').value;
+            let mobile = document.getElementById('checkinMobile').value;
+            let roomNumber = document.getElementById('checkinRoom').value;
+            let checkIn = document.getElementById('checkinDate').value;
+            let checkOut = document.getElementById('checkoutDate').value;
+
+            if(!firstName || !lastName || !mobile || !roomNumber || !checkIn || !checkOut) {
+                alert("Please fill all check-in fields including dates.");
+                return;
+            }
+
+            if(mobile.length !== 10) {
+                alert("Please enter a valid 10-digit mobile number.");
+                return;
+            }
+
+            let inDate = new Date(checkIn);
+            let outDate = new Date(checkOut);
+            if(isNaN(inDate) || isNaN(outDate) || outDate <= inDate) {
+                alert("Please select valid check-in and check-out dates."); return;
+            }
+
+            btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Processing...";
+            fetch('http://127.0.0.1:5000/api/staff/manual_checkin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    first_name: firstName, 
+                    last_name: lastName, 
+                    mobile: mobile, 
+                    room_number: roomNumber,
+                    check_in: checkIn,
+                    check_out: checkOut
+                })
+            }).then(res => res.json()).then(res => {
+                if(res.success) {
+                    alert(`Check-in complete!\nGuest Username: ${res.credentials.username}\nGuest Password: ${res.credentials.password}`);
+                    document.getElementById('checkinFirstName').value = '';
+                    document.getElementById('checkinLastName').value = '';
+                    document.getElementById('checkinMobile').value = '';
+                    document.getElementById('checkinRoom').value = '';
+                    document.getElementById('checkinDate').value = '';
+                    document.getElementById('checkoutDate').value = '';
+                    btnEl.innerHTML = "<i class='fa-solid fa-key'></i> Issue Key & Check In";
+                    loadDashboards();
+                } else {
+                    alert(res.message);
+                    btnEl.innerHTML = "<i class='fa-solid fa-key'></i> Issue Key & Check In";
+                }
+            }).catch(err => {
+                alert("Error processing check-in.");
+                btnEl.innerHTML = "<i class='fa-solid fa-key'></i> Issue Key & Check In";
+            });
+        }
+
+        function processCheckout(btnEl) {
+            let roomNumber = document.getElementById('checkoutRoomNumber').value;
+            if(!roomNumber) return;
+            
+            btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Wait...";
+            fetch('http://127.0.0.1:5000/api/staff/checkout_room', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ room_number: roomNumber })
+            }).then(res => res.json()).then(res => {
+                if(res.success) {
+                    btnEl.innerHTML = "<i class='fa-solid fa-check'></i> Checked Out";
+                    document.getElementById('checkoutRoomNumber').value = "";
+                    setTimeout(() => {
+                        btnEl.innerHTML = "<i class='fa-solid fa-door-open'></i> Checkout";
+                        loadDashboards();
+                    }, 1500);
+                } else {
+                    alert(res.message);
+                    btnEl.innerHTML = "<i class='fa-solid fa-door-open'></i> Checkout";
+                }
+            });
+        }
+
+        const formatDate = (date) => {
+            let d = date.getDate().toString().padStart(2, '0');
+            let m = (date.getMonth() + 1).toString().padStart(2, '0');
+            let y = date.getFullYear();
+            return `${y}-${m}-${d}`;
+        };
+
+        function setInitialDates() {
+            let inInput = document.getElementById('checkinDate');
+            let outInput = document.getElementById('checkoutDate');
+            if(!inInput.value) {
+                let today = new Date();
+                let tmrw = new Date(); tmrw.setDate(today.getDate() + 1);
+                let todayStr = formatDate(today);
+                let tmrwStr = formatDate(tmrw);
+                inInput.value = todayStr;
+                inInput.min = todayStr;
+                outInput.value = tmrwStr;
+                outInput.min = tmrwStr;
+            }
+        }
+        
+        function handleStaffCheckInChange() {
+            let inInput = document.getElementById('checkinDate');
+            let outInput = document.getElementById('checkoutDate');
+            
+            let inDate = new Date(inInput.value);
+            if (!isNaN(inDate)) {
+                let nextDate = new Date(inDate);
+                nextDate.setDate(nextDate.getDate() + 1);
+                
+                let nextDateStr = formatDate(nextDate);
+                outInput.value = nextDateStr;
+                outInput.min = nextDateStr;
+            }
+            calculateStaffPrice();
+        }
+
+        function calculateStaffPrice() {
+            let roomNumber = document.getElementById('checkinRoom').value;
+            let inDate = new Date(document.getElementById('checkinDate').value);
+            let outDate = new Date(document.getElementById('checkoutDate').value);
+            let priceLabel = document.getElementById('staffPriceLabel');
+            
+            if(!roomNumber || isNaN(inDate) || isNaN(outDate)) {
+                priceLabel.style.display = 'none';
+                return;
+            }
+            
+            let room = globalRoomsData.find(r => r.number.toString() === roomNumber);
+            if(!room) {
+                priceLabel.style.display = 'block';
+                priceLabel.innerText = "Room not found in availability list.";
+                priceLabel.style.color = "#e74c3c";
+                return;
+            }
+            
+            if(room.status !== 'AVAILABLE') {
+                priceLabel.style.display = 'block';
+                priceLabel.innerText = `Room ${room.number} is currently ${room.status}.`;
+                priceLabel.style.color = "#e74c3c";
+                return;
+            }
+            
+            let diffTime = outDate - inDate;
+            let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            let nights = diffDays > 0 ? diffDays : 1;
+            
+            let priceToUse = room.current_price || room.base_price;
+            let total = nights * priceToUse;
+            priceLabel.style.display = 'block';
+            priceLabel.innerText = `Total Amount: ₹${total} (${nights} night${nights > 1 ? 's' : ''} @ ₹${priceToUse}/night)`;
+            priceLabel.style.color = "var(--primary)";
+        }
+
+        window.onload = () => {
+            loadDashboards();
+            setInitialDates();
+        };
+    </script>
+</body>
+</html>

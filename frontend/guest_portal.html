@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Portal - Grand Hotel</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; background: var(--bg-dark); }
+        
+        /* SIDEBAR */
+        .sidebar {
+            width: 250px;
+            background: var(--bg-card);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 100;
+        }
+        .sidebar-logo {
+            color: var(--gold);
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+        .nav-items { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+        .nav-btn {
+            background: transparent; border: none; padding: 15px; border-radius: 8px; cursor: pointer; color: var(--text-muted); text-align: left; font-size: 1.1rem; transition: all 0.3s;
+            display: flex; align-items: center; gap: 15px;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .nav-btn.active { background: rgba(245, 158, 11, 0.1); color: var(--gold); border-right: 3px solid var(--gold); }
+        
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+            position: relative;
+        }
+        .tab-pane { display: none; animation: fadeIn 0.3s; }
+        .tab-pane.active { display: block; }
+        
+        /* WIDGETS */
+        .widget { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 25px; margin-bottom: 25px; }
+        .widget h3 { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; font-size: 1.3rem; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .wifi-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; font-family: monospace; font-size: 1.1em; color: var(--primary);}
+        
+        /* FOOD MENU */
+        .food-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
+        .food-card {
+            background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; transition: transform 0.3s;
+        }
+        .food-card:hover { transform: translateY(-5px); border-color: var(--gold); }
+        .food-img { width: 100%; height: 200px; object-fit: cover; }
+        .food-info { padding: 20px; }
+        .food-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .food-price { color: var(--gold); font-weight: bold; font-size: 1.2rem; }
+        
+        /* FLOATING CART AND MODAL */
+        .floating-cart {
+            position: fixed; bottom: 30px; right: 30px; background: var(--gold); color: #000; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; cursor: pointer; box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4); transition: transform 0.3s; z-index: 1000;
+        }
+        .floating-cart:hover { transform: scale(1.1); }
+        .cart-badge { position: absolute; top: -5px; right: -5px; background: #e74c3c; color: #fff; font-size: 0.8rem; font-weight: bold; width: 24px; height: 24px; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+
+        .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 2000; display: none; justify-content: center; align-items: center;}
+        .cart-modal { background: var(--bg-card); width: 100%; max-width: 500px; padding: 30px; border-radius: 12px; border: 1px solid var(--border-color); max-height: 80vh; overflow-y: auto;}
+        .cart-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .cart-total { font-size: 1.5rem; font-weight: bold; text-align: right; margin-top: 20px; color: var(--gold); }
+
+        /* CHECKOUT */
+        .checkout-view { display: none; }
+        
+        /* PAYMENT TABS */
+        .payment-tab { flex: 1; text-align: center; padding: 12px; cursor: pointer; color: var(--text-muted); font-weight: bold; transition: 0.3s; }
+        .payment-tab.active { color: var(--gold); border-bottom: 2px solid var(--gold); margin-bottom: -2px; }
+        .payment-tab:hover { color: #fff; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-logo">GRAND HOTEL</div>
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div style="width: 60px; height: 60px; background: var(--primary); border-radius: 50%; margin: 0 auto 10px auto; display:flex; justify-content:center; align-items:center; font-size: 1.5rem; color:#fff;">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <h4 style="margin:0;" id="gName">Guest</h4>
+            <p style="color: var(--gold); font-size: 0.85rem; margin-top: 5px;">VIP Member</p>
+        </div>
+
+        <div class="nav-items">
+            <button class="nav-btn active" onclick="switchTab('overview', this)"><i class="fa-solid fa-house"></i> Overview</button>
+            <button class="nav-btn" onclick="switchTab('dining', this)"><i class="fa-solid fa-utensils"></i> In-Room Dining</button>
+            <button class="nav-btn" onclick="switchTab('housekeeping', this)"><i class="fa-solid fa-broom"></i> Housekeeping</button>
+            <button class="nav-btn" onclick="switchTab('support', this)"><i class="fa-solid fa-headset"></i> Support</button>
+        </div>
+
+        <button class="btn btn-outline" style="margin-top: auto; padding: 10px;" onclick="localStorage.clear(); window.location.href='login.html'"><i class="fa-solid fa-sign-out-alt"></i> Logout</button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        
+        <!-- OVERVIEW TAB -->
+        <div id="overview" class="tab-pane active">
+            <h2 style="font-size: 2.2rem; margin-bottom: 30px;">Your Stay Dashboard</h2>
+            
+            <div class="grid-2">
+                <!-- ROOM INFO -->
+                <div class="widget">
+                    <h3><i class="fa-solid fa-key text-primary"></i> Active Suite Details</h3>
+                    <div id="roomDetailsContent">
+                        <p class="text-muted"><i class="fa-solid fa-circle-notch fa-spin"></i> Fetching details...</p>
+                    </div>
+                </div>
+
+                <!-- WIFI -->
+                <div class="widget">
+                    <h3><i class="fa-solid fa-wifi text-primary"></i> Premium WiFi</h3>
+                    <p class="text-muted" style="margin-bottom: 15px;">Secure network active for your devices.</p>
+                    <div style="display:flex; gap:20px;">
+                        <div style="flex:1;">
+                            <label style="font-size: 0.8em; color:var(--text-muted);">SSID</label>
+                            <div class="wifi-box">GrandHotel_Premium</div>
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size: 0.8em; color:var(--text-muted);">Passcode</label>
+                            <div class="wifi-box">LUXURY2026</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FIRE SAFETY -->
+                <div class="widget" style="border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05); grid-column: span 2;">
+                    <h3 style="color:#ef4444;"><i class="fa-solid fa-fire"></i> Emergency Evacuation Protocol</h3>
+                    <div class="grid-2" style="font-size: 0.95em; color:var(--text-muted);">
+                        <ul style="padding-left: 20px;">
+                            <li>Do not use elevators during an active alarm.</li>
+                            <li>Follow the illuminated EXIT signs in the corridor.</li>
+                        </ul>
+                        <ul style="padding-left: 20px;">
+                            <li>Assemble at the front courtyard fountain.</li>
+                            <li>If doors are hot to the touch, remain in room and dial 0 for front desk.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DINING TAB -->
+        <div id="dining" class="tab-pane">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px;">
+                <div>
+                    <h2 style="font-size: 2.2rem; margin: 0 0 10px 0;">In-Room Dining</h2>
+                    <p class="text-muted" style="margin: 0;">24-hour gourmet room service delivered straight to your suite.</p>
+                </div>
+            </div>
+
+            <div class="food-grid">
+                <!-- Food Item 1 -->
+                <div class="food-card">
+                    <img src="grand_breakfast.png" class="food-img" alt="Breakfast">
+                    <div class="food-info">
+                        <div class="food-header">
+                            <h4 style="margin:0; font-size:1.1rem;">Grand Breakfast</h4>
+                            <span class="food-price">₹2100</span>
+                        </div>
+                        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 15px;">Eggs, bacon, artisan toast, fresh berries, and premium house coffee.</p>
+                        <button class="btn btn-outline" style="width:100%;" onclick="addToCart('Grand Breakfast', 2100)"><i class="fa-solid fa-plus"></i> Add to Cart</button>
+                    </div>
+                </div>
+
+                <!-- Food Item 2 -->
+                <div class="food-card">
+                    <img src="https://images.unsplash.com/photo-1546964124-0cce460f38ef?auto=format&fit=crop&w=800&q=80" class="food-img" alt="Wagyu Ribeye">
+                    <div class="food-info">
+                        <div class="food-header">
+                            <h4 style="margin:0; font-size:1.1rem;">A5 Wagyu Ribeye</h4>
+                            <span class="food-price">₹7100</span>
+                        </div>
+                        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 15px;">12oz premium cut, garlic herb butter, accompanied by truffle mashed potatoes.</p>
+                        <button class="btn btn-outline" style="width:100%;" onclick="addToCart('A5 Wagyu Ribeye', 7100)"><i class="fa-solid fa-plus"></i> Add to Cart</button>
+                    </div>
+                </div>
+
+                <!-- Food Item 3 -->
+                <div class="food-card">
+                    <img src="https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=800&q=80" class="food-img" alt="Pizza">
+                    <div class="food-info">
+                        <div class="food-header">
+                            <h4 style="margin:0; font-size:1.1rem;">Margherita Stone Pizza</h4>
+                            <span class="food-price">₹2300</span>
+                        </div>
+                        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 15px;">San Marzano tomatoes, fresh mozzarella, basil, and a drizzle of olive oil.</p>
+                        <button class="btn btn-outline" style="width:100%;" onclick="addToCart('Margherita Stone Pizza', 2300)"><i class="fa-solid fa-plus"></i> Add to Cart</button>
+                    </div>
+                </div>
+
+                <!-- Food Item 4 -->
+                <div class="food-card">
+                    <img src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80" class="food-img" alt="Cocktail">
+                    <div class="food-info">
+                        <div class="food-header">
+                            <h4 style="margin:0; font-size:1.1rem;">Midnight Sour Cocktail</h4>
+                            <span class="food-price">₹1500</span>
+                        </div>
+                        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 15px;">Bourbon, fresh lemon, simple syrup, egg white, shaken over ice.</p>
+                        <button class="btn btn-outline" style="width:100%;" onclick="addToCart('Midnight Sour Cocktail', 1500)"><i class="fa-solid fa-plus"></i> Add to Cart</button>
+                    </div>
+                </div>
+                
+                <!-- Food Item 5 -->
+                <div class="food-card">
+                    <img src="https://images.unsplash.com/photo-1624353365286-3f8d62daad51?auto=format&fit=crop&w=800&q=80" class="food-img" alt="Lava Cake">
+                    <div class="food-info">
+                        <div class="food-header">
+                            <h4 style="margin:0; font-size:1.1rem;">Chocolate Lava Cake</h4>
+                            <span class="food-price">₹1200</span>
+                        </div>
+                        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 15px;">Warm molten chocolate center, served with Madagascar vanilla bean ice cream.</p>
+                        <button class="btn btn-outline" style="width:100%;" onclick="addToCart('Chocolate Lava Cake', 1200)"><i class="fa-solid fa-plus"></i> Add to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HOUSEKEEPING TAB -->
+        <div id="housekeeping" class="tab-pane">
+            <h2 style="font-size: 2.2rem; margin-bottom: 30px;">Housekeeping & Comfort</h2>
+            <div class="widget">
+                <h3><i class="fa-solid fa-broom text-primary"></i> Request Cleaning Dispatch</h3>
+                <p class="text-muted" style="margin-bottom: 25px;">Our discrete housekeeping team will immediately freshen your room.</p>
+                <button class="btn btn-primary" style="padding: 15px 30px; font-size: 1.1rem;" onclick="requestCleaning()" id="btnClean"><i class="fa-solid fa-sparkles"></i> Dispatch Housekeeping</button>
+            </div>
+        </div>
+
+        <!-- SUPPORT TAB -->
+        <div id="support" class="tab-pane">
+            <h2 style="font-size: 2.2rem; margin-bottom: 30px;">Guest Support</h2>
+            <div class="widget" style="border-left: 4px solid #3b82f6; background: rgba(59, 130, 246, 0.05);">
+                <h3 style="color: #3b82f6;"><i class="fa-solid fa-headset"></i> 24/7 Digital Concierge</h3>
+                <p class="text-muted" style="margin-bottom: 25px;">Connect instantly with our support team regarding billing, local travel, or general inquiries.</p>
+                <div class="grid-2">
+                    <a href="tel:+919510264073" class="btn btn-outline" style="text-align:center;"><i class="fa-solid fa-phone"></i> Call: +91 9510264073</a>
+                    <a href="https://wa.me/919510264073" target="_blank" class="btn btn-outline" style="text-align:center; border-color:#25D366; color:#25D366;"><i class="fa-brands fa-whatsapp"></i> Chat on WhatsApp</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- FLOATING CART -->
+    <div class="floating-cart" onclick="openCart()">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <div class="cart-badge" id="cartCount">0</div>
+    </div>
+
+    <!-- CART MODAL -->
+    <div class="modal-overlay" id="cartOverlay">
+        <div class="cart-modal">
+            
+            <!-- Default Cart View -->
+            <div id="cartView">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:15px; margin-bottom:15px;">
+                    <h3 style="margin:0; font-size: 1.4rem;">Your Order</h3>
+                    <button style="background:none; border:none; color:#fff; font-size:1.5rem; cursor:pointer;" onclick="closeCart()">&times;</button>
+                </div>
+                
+                <div id="cartItemsList">
+                    <p class="text-muted text-center" style="margin: 30px 0;">Your cart is empty.</p>
+                </div>
+                
+                <div class="cart-total" id="cartTotalDisplay">Total: ₹0</div>
+                
+                <button class="btn btn-primary" style="width:100%; padding:15px; margin-top:20px;" onclick="proceedToCheckout()" id="checkoutBtn" disabled>Proceed to Payment</button>
+            </div>
+
+            <!-- Checkout / Payment View -->
+            <div id="checkoutView" class="checkout-view">
+                <h3 style="margin:0 0 10px 0; font-size: 1.4rem;"><i class="fa-solid fa-lock text-gold"></i> Secure Checkout</h3>
+                
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+                        <span class="text-muted">Target Suite:</span>
+                        <strong class="text-primary" id="checkoutRoom">Loading...</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span class="text-muted">Amount Due:</span>
+                        <strong class="text-gold" id="checkoutAmount">₹0</strong>
+                    </div>
+                </div>
+
+                <div style="display: flex; border-bottom: 2px solid rgba(255,255,255,0.1); margin-bottom: 25px;">
+                    <div id="tabCard" class="payment-tab active" onclick="switchPaymentTab('card')"><i class="fa-solid fa-credit-card"></i> Card</div>
+                    <div id="tabUpi" class="payment-tab" onclick="switchPaymentTab('upi')"><i class="fa-brands fa-google-pay"></i> UPI</div>
+                </div>
+
+                <div id="cardPaymentView">
+                    <div class="form-group">
+                        <label>Cardholder Name</label>
+                        <input type="text" id="cardName" class="form-control" placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label>Card Number</label>
+                        <input type="text" id="cardNumber" class="form-control" placeholder="xxxx xxxx xxxx xxxx" maxlength="19">
+                    </div>
+                    <div style="display: flex; gap: 15px;">
+                        <div class="form-group" style="flex: 2;">
+                            <label>Expiry Date</label>
+                            <div style="display: flex; gap: 10px;">
+                                <select id="cardMonth" class="form-control" style="padding: 10px; flex:1;">
+                                    <option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option>
+                                    <option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                                </select>
+                                <select id="cardYear" class="form-control" style="padding: 10px; flex:1;">
+                                    <option value="2026">2026</option><option value="2027">2027</option><option value="2028">2028</option><option value="2029">2029</option><option value="2030">2030</option>
+                                    <option value="2031">2031</option><option value="2032">2032</option><option value="2033">2033</option><option value="2034">2034</option><option value="2035">2035</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>CVV</label>
+                            <input type="text" id="cardCvv" class="form-control" placeholder="123" maxlength="3">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="upiPaymentView" style="display: none; text-align: center;">
+                    <p style="color:var(--text-muted); margin-bottom: 15px;">Scan to pay via Paytm, PhonePe, or GPay</p>
+                    <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 15px;">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=vinitchaudhariv2-1@okhdfcbank%26pn=vinit%20chaudhari" alt="UPI QR Code" style="width: 200px; height: 200px;">
+                    </div>
+                    <p style="font-weight: bold; color: var(--gold);">UPI ID: vinitchaudhariv2-1@okhdfcbank</p>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button class="btn btn-outline" style="flex: 1; justify-content:center; padding:15px; border:none;" onclick="cancelCheckout()">Cancel</button>
+                    <button id="btnProceedPayment" class="btn btn-primary" style="flex: 2; justify-content:center; padding:15px;" onclick="processPayment()">
+                        <i class="fa-solid fa-lock" style="margin-right: 8px;"></i> Pay Now
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <script>
+        let currentUser = localStorage.getItem("username");
+        let activeRoom = null;
+        
+        let cart = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if(!currentUser) {
+                window.location.href = "login.html";
+                return;
+            }
+            document.getElementById('gName').innerText = currentUser;
+            fetchGuestDetails();
+        });
+
+        // TAB NAVIGATION
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            btnElement.classList.add('active');
+        }
+
+        // DATA FETCH
+        function fetchGuestDetails() {
+            fetch("http://127.0.0.1:5000/guest/details?username=" + currentUser)
+            .then(res => res.json())
+            .then(data => {
+                let rc = document.getElementById('roomDetailsContent');
+                if(data.error) {
+                    rc.innerHTML = `<p class="text-muted">No active bookings found.</p>`;
+                    document.getElementById('checkoutRoom').innerText = "None Selected";
+                } else {
+                    activeRoom = data.number;
+                    rc.innerHTML = `
+                        <h1 style="font-size: 3rem; color: #fff; margin-bottom: 5px;">Room ${data.number}</h1>
+                        <p style="color:var(--primary); font-weight: 600; margin-bottom: 10px;">${data.type}</p>
+                        <p style="font-size: 0.9em; color:var(--text-muted);">Stay: ${data.check_in} &rarr; ${data.check_out}</p>
+                    `;
+                    document.getElementById('checkoutRoom').innerText = `Room ${data.number}`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('roomDetailsContent').innerHTML = "<p class='text-red'>Details unavailable.</p>";
+            });
+        }
+
+        // HOUSEKEEPING
+        function requestCleaning() {
+            if(!activeRoom) return alert("You don't have an active room assignment.");
+            
+            let btn = document.getElementById('btnClean');
+            btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Dispatching...";
+            
+            fetch("http://127.0.0.1:5000/request_cleaning", {
+                method: "POST", headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({room_number: activeRoom})
+            }).then(res => res.json()).then(data => {
+                btn.innerHTML = "<i class='fa-solid fa-check text-green'></i> Cleaning Dispatched";
+                btn.style.background = "#2ecc71"; btn.style.borderColor = "#2ecc71"; btn.style.color = "#000";
+            });
+        }
+
+        // E-COMMERCE CART LOGIC
+        function addToCart(name, price) {
+            let existing = cart.find(i => i.name === name);
+            if(existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({name, price, quantity: 1});
+            }
+            
+            let totalCount = cart.reduce((acc, i) => acc + i.quantity, 0);
+            document.getElementById('cartCount').innerText = totalCount;
+            
+            // Pop an alert or small toast but for now, simple interaction
+            let cartIcon = document.querySelector('.floating-cart');
+            cartIcon.style.transform = 'scale(1.2)';
+            setTimeout(() => cartIcon.style.transform = 'scale(1)', 200);
+        }
+
+        function openCart() {
+            renderCartItems();
+            document.getElementById('cartOverlay').style.display = 'flex';
+            document.getElementById('cartView').style.display = 'block';
+            document.getElementById('checkoutView').style.display = 'none';
+        }
+        
+        function closeCart() {
+            document.getElementById('cartOverlay').style.display = 'none';
+        }
+
+        function renderCartItems() {
+            const list = document.getElementById('cartItemsList');
+            const totalDisplay = document.getElementById('cartTotalDisplay');
+            const btn = document.getElementById('checkoutBtn');
+            
+            if(cart.length === 0) {
+                list.innerHTML = `<p class="text-muted text-center" style="margin: 30px 0;">Your cart is empty.</p>`;
+                totalDisplay.innerText = "Total: ₹0";
+                btn.disabled = true;
+                return;
+            }
+
+            let html = "";
+            let total = 0;
+            cart.forEach((item, index) => {
+                let itemTotal = item.price * item.quantity;
+                total += itemTotal;
+                html += `
+                    <div class="cart-item">
+                        <span>${item.name} (x${item.quantity})</span>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <span class="text-gold font-weight-bold">₹${itemTotal}</span>
+                            <button style="background:none; border:none; color:#e74c3c; cursor:pointer;" onclick="removeFromCart(${index})"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+            totalDisplay.innerText = `Total: ₹${total}`;
+            document.getElementById('checkoutAmount').innerText = `₹${total}`;
+            btn.disabled = false;
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            let totalCount = cart.reduce((acc, i) => acc + i.quantity, 0);
+            document.getElementById('cartCount').innerText = totalCount;
+            renderCartItems();
+        }
+
+        function proceedToCheckout() {
+            if(!activeRoom) {
+                alert("You need an active suite to order In-Room Dining!");
+                return;
+            }
+            document.getElementById('cartView').style.display = 'none';
+            document.getElementById('checkoutView').style.display = 'block';
+        }
+
+        function cancelCheckout() {
+            document.getElementById('checkoutView').style.display = 'none';
+            document.getElementById('cartView').style.display = 'block';
+        }
+
+        // PAYMENT PROCESSING LOGIC
+        let activePaymentMode = 'card';
+
+        document.getElementById('cardNumber')?.addEventListener('input', function (e) {
+            e.target.value = e.target.value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim();
+        });
+
+        function switchPaymentTab(tab) {
+            activePaymentMode = tab;
+            document.querySelectorAll('.payment-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            
+            if(tab === 'card') {
+                document.getElementById('cardPaymentView').style.display = 'block';
+                document.getElementById('upiPaymentView').style.display = 'none';
+            } else {
+                document.getElementById('cardPaymentView').style.display = 'none';
+                document.getElementById('upiPaymentView').style.display = 'block';
+            }
+        }
+
+        function processPayment() {
+            if(activePaymentMode === 'card') {
+                let name = document.getElementById('cardName').value;
+                let num = document.getElementById('cardNumber').value.replace(/\s+/g, '');
+                let cvv = document.getElementById('cardCvv').value;
+                if(!name || num.length !== 16 || cvv.length !== 3) {
+                    alert("Please correctly fill all Card payment details.");
+                    return;
+                }
+            }
+
+            let btn = document.getElementById('btnProceedPayment');
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-lock" style="margin-right: 8px;"></i> Pay Now';
+                btn.disabled = false;
+                confirmOrder();
+            }, 1500);
+        }
+
+        function confirmOrder() {
+            let payload = {
+                username: currentUser,
+                room_number: activeRoom,
+                items: cart.map(i => `${i.quantity}x ${i.name}`).join(", "),
+                total: parseInt(document.getElementById('checkoutAmount').innerText.replace('₹', ''))
+            };
+
+            let btn = document.getElementById('btnProceedPayment');
+            btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Submitting...";
+            btn.disabled = true;
+            
+            fetch("http://127.0.0.1:5000/api/guest/order_food", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            }).then(res => res.json()).then(data => {
+                closeCart();
+                cart = [];
+                document.getElementById('cartCount').innerText = "0";
+                alert(`✅ Payment Successful & Order Confirmed!\n\nYour premium dining selection is being prepared by our chefs.\nIt will be delivered to Suite ${activeRoom} within 30 minutes.`);
+                btn.innerHTML = '<i class="fa-solid fa-lock" style="margin-right: 8px;"></i> Pay Now';
+                btn.disabled = false;
+                cancelCheckout(); // Reset view natively for next cart
+            });
+        }
+    </script>
+</body>
+</html>

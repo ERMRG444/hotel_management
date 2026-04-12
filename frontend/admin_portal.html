@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Dashboard - Grand Hotel</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-sidebar { position: fixed; width: 250px; height: 100vh; background: var(--bg-card); border-right: 1px solid var(--border-color); padding: 30px 20px; z-index: 100; backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); }
+        .admin-sidebar h2 { font-size: 1.2em; letter-spacing: 2px; text-transform: uppercase; color: var(--primary); margin-bottom: 40px; }
+        .admin-menu a { display: block; padding: 15px; color: var(--text-muted); text-decoration: none; border-radius: var(--radius-sm); margin-bottom: 10px; transition: all 0.3s; }
+        .admin-menu a:hover, .admin-menu a.active { background: rgba(0, 242, 254, 0.1); color: var(--primary); box-shadow: 0 0 10px rgba(0, 242, 254, 0.1); }
+        
+        .admin-main { margin-left: 250px; padding: 40px 5%; width: calc(100% - 250px); }
+        .stat-card { display: flex; align-items: center; justify-content: space-between; }
+        .stat-icon { font-size: 2.5em; color: var(--primary); opacity: 0.8; }
+        
+        .chart-container { position: relative; height: 300px; width: 100%; margin-top: 20px; }
+        
+        /* LIVE FEED */
+        .live-feed-box { background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); max-height: 400px; overflow-y: auto; padding: 10px; }
+        .feed-item { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: flex-start; gap: 15px; animation: fadeIn 0.5s; transition: 0.3s;}
+        .feed-item:hover { background: rgba(255,255,255,0.02); }
+        .feed-item:last-child { border-bottom: none; }
+        .feed-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.2em; flex-shrink: 0;}
+        .feed-icon.booking { background: rgba(46, 204, 113, 0.15); color: #2ecc71; box-shadow: 0 0 10px rgba(46,204,113,0.2); }
+        .feed-icon.dining { background: rgba(0, 242, 254, 0.15); color: #00f2fe; box-shadow: 0 0 10px rgba(0,242,254,0.2);}
+        .feed-icon.cleaning { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; box-shadow: 0 0 10px rgba(139,92,246,0.2);}
+        
+        /* ROOM MATRIX */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px; margin-top: 20px;}
+        .room-block { background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; text-align: center; transition: 0.3s;}
+        .room-block.status-available { border-bottom: 3px solid #2ecc71; }
+        .room-block.status-occupied { border-bottom: 3px solid #3498db; }
+        .room-block.status-dirty { border-bottom: 3px solid #e74c3c; }
+        .room-block.status-dirty { border-bottom: 3px solid #e74c3c; }
+        .room-block.status-maintenance { border-bottom: 3px solid #8b5cf6; opacity: 0.7;}
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* VIEW TOGGLING */
+        .view-panel { display: none; }
+        .view-panel.active { display: block; animation: fadeIn 0.4s; }
+        
+        /* HOTEL BUILDING MAP */
+        .hotel-building {
+            background: #0f172a; border-radius: 12px 12px 0 0; padding: 40px; border: 2px solid #1e293b; border-bottom: none;
+            box-shadow: 0 -20px 50px rgba(0,0,0,0.5), inset 0 0 100px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 30px;
+        }
+        .hotel-floor { display: grid; grid-template-columns: repeat(10, 1fr); gap: 15px; }
+        .hotel-window {
+            aspect-ratio: 1/1.5; background: #020617; border-radius: 4px; border: 2px solid #334155;
+            position: relative; transition: all 0.5s ease; box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
+        }
+        .hotel-window.lit-yellow {
+            background: #ffecb3; border-color: #ffeb3b; 
+            box-shadow: 0 0 30px rgba(255, 235, 59, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+        .window-label {
+            position: absolute; bottom: 5px; left: 0; width: 100%; text-align: center;
+            font-size: 0.65em; color: rgba(255,255,255,0.3); font-weight: bold; font-family: monospace;
+        }
+        .hotel-window.lit-yellow .window-label { color: #856404; font-weight: 800; }
+        .floor-label { color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 2px; font-size: 0.8em; margin-bottom: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-sidebar">
+        <h2 class="text-gradient-gold"><i class="fa-solid fa-crown"></i> Executive</h2>
+        <div class="admin-menu">
+            <a href="#" class="nav-btn active" onclick="switchView('dashboard', this)"><i class="fa-solid fa-chart-pie" style="width: 25px;"></i> Analytics Overview</a>
+            <a href="login.html" style="margin-top: 50px; color: #e74c3c;" onclick="localStorage.clear()"><i class="fa-solid fa-power-off" style="width: 25px;"></i> Logout</a>
+        </div>
+        <div style="position: absolute; bottom: 30px; left: 20px; color: var(--text-muted); font-size: 0.8em;">
+            Logged in as:<br><strong class="text-gold" id="adminName">Admin</strong>
+        </div>
+    </div>
+
+    <div class="admin-main">
+        
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboardView" class="view-panel active">
+            <div class="flex-between mb-4 animate-up delay-1" style="margin-bottom: 40px;">
+            <div>
+                <h1 style="font-size: 2.5em; margin-bottom: 5px;">Executive Dashboard</h1>
+                <p class="text-muted">High-level omniscience over hotel revenue and live operations. (<span id="currentTime"></span>)</p>
+            </div>
+            <button class="btn btn-primary" onclick="loadAll()"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
+        </div>
+
+        <!-- STATS ROW -->
+        <div class="grid-4 animate-up delay-2" style="margin-bottom: 40px;">
+            <div class="glass-card stat-card border-gold">
+                <div>
+                    <p class="text-muted" style="text-transform:uppercase; font-size:0.8em; letter-spacing:1px;">Total Revenue</p>
+                    <h3 style="font-size: 2em; margin-top:5px;">₹<span id="revTotal">...</span></h3>
+                </div>
+                <i class="fa-solid fa-sack-dollar stat-icon text-gold"></i>
+            </div>
+            <div class="glass-card stat-card">
+                <div>
+                    <p class="text-muted" style="text-transform:uppercase; font-size:0.8em; letter-spacing:1px;">Occupancy Rate</p>
+                    <h3 style="font-size: 2em; margin-top:5px;"><span id="occRate">...</span>%</h3>
+                </div>
+                <i class="fa-solid fa-bed stat-icon text-gold"></i>
+            </div>
+            <div class="glass-card stat-card">
+                <div>
+                    <p class="text-muted" style="text-transform:uppercase; font-size:0.8em; letter-spacing:1px;">Pending Cleanings</p>
+                    <h3 style="font-size: 2em; margin-top:5px; color:#e74c3c;" id="dirtyRooms">...</h3>
+                </div>
+                <i class="fa-solid fa-spray-can-sparkles stat-icon" style="color:#e74c3c;"></i>
+            </div>
+            <div class="glass-card stat-card border-gold">
+                <div>
+                    <p class="text-muted" style="text-transform:uppercase; font-size:0.8em; letter-spacing:1px;">Pending Dining</p>
+                    <h3 style="font-size: 2em; margin-top:5px; color:#f39c12;" id="pendingFood">...</h3>
+                </div>
+                <i class="fa-solid fa-bowl-food stat-icon" style="color:#f39c12;"></i>
+            </div>
+        </div>
+
+        <div class="grid-2 animate-up delay-3" style="align-items: flex-start;">
+            
+            <!-- LIVE ACTIVITY FEED & MAINTENANCE OVERSIGHT -->
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="glass-panel">
+                    <h3 style="font-size: 1.3em; margin-bottom: 20px;"><i class="fa-solid fa-tower-broadcast text-gold"></i> Live Operations Feed</h3>
+                    <div class="live-feed-box" id="liveFeed">
+                        <p class="text-center text-muted" style="margin-top:20px;">Establishing link...</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="border-color: rgba(139,92,246,0.3);">
+                    <h3 style="font-size: 1.1em; margin-bottom: 10px; color: #8b5cf6;"><i class="fa-solid fa-wrench"></i> Active Maintenance Alerts</h3>
+                    <div id="maintFeed" style="max-height: 150px; overflow-y: auto;">
+                        <p class="text-muted text-center" style="font-size: 0.9em;">Zero structural issues.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REVENUE CHART & RECENT BOOKINGS -->
+            <div>
+                <div class="glass-panel" style="margin-bottom: 20px;">
+                    <h3 style="font-size: 1.3em; margin-bottom: 10px;">Trailing Revenue Analysis</h3>
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="overflow-x: auto;">
+                    <h3 style="font-size: 1.3em; margin-bottom: 20px;">Recent Reservations</h3>
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th>Guest</th>
+                                <th>Room</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingsTable">
+                            <tr><td colspan="3" class="text-center text-muted">Loading Bookings...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- LIVE ROOM MATIX -->
+        <div class="glass-panel animate-up delay-4" style="margin-top: 40px;">
+            <div class="flex-between">
+                <h3 style="font-size: 1.3em;"><i class="fa-solid fa-hotel text-primary"></i> Global Inventory Matrix</h3>
+                <div style="display:flex; gap:15px; font-size:0.85em;">
+                    <span style="color:#2ecc71"><i class="fa-solid fa-circle"></i> Available</span>
+                    <span style="color:#3498db"><i class="fa-solid fa-circle"></i> Occupied</span>
+                    <span style="color:#e74c3c"><i class="fa-solid fa-circle"></i> Dirty</span>
+                    <span style="color:#8b5cf6"><i class="fa-solid fa-circle"></i> Maint.</span>
+                </div>
+            </div>
+            <div class="room-grid" id="roomMatrix">
+                <p class="text-muted">Scanning inventory...</p>
+            </div>
+        </div> <!-- END DASHBOARD VIEW -->
+
+        <!-- OCCUPANCY FLIGHT-DECK VIEW -->
+        <div id="occupancyView" class="view-panel">
+            <div class="flex-between mb-4" style="margin-bottom: 40px;">
+                <div>
+                    <h1 style="font-size: 2.5em; margin-bottom: 5px;">Live Occupancy Matrix</h1>
+                    <p class="text-muted">A realistic visual representation of current physical room utilization.</p>
+                </div>
+                <div style="display:flex; gap:15px; font-weight: bold; align-items: center; background: rgba(255,255,255,0.02); padding: 10px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.05);">
+                    <span style="color:var(--text-muted); display:flex; align-items:center; gap:8px;"><div style="width:15px; height:15px; background:#020617; border:2px solid #334155; border-radius:2px;"></div> Empty Room</span>
+                    <span style="color:#ecd461; display:flex; align-items:center; gap:8px;"><div style="width:15px; height:15px; background:#ffecb3; border:2px solid #ffeb3b; border-radius:2px; box-shadow:0 0 10px rgba(255,235,59,0.5);"></div> Occupied Room</span>
+                </div>
+            </div>
+
+            <div class="hotel-building" id="buildingGrid">
+                <p class="text-muted text-center"><i class="fa-solid fa-circle-notch fa-spin"></i> Initializing Building Map...</p>
+            </div>
+            <div style="background: #0f172a; height: 30px; border-radius: 4px; margin: 0 15px; border-bottom: 5px solid #020617;"></div> <!-- Minimal Ground -->
+        </div> <!-- END OCCUPANCY VIEW -->
+
+    </div>
+
+    <script>
+        document.getElementById('adminName').innerText = localStorage.getItem("username") || "Admin";
+        
+        // Ensure only admin accesses
+        if(localStorage.getItem("userRole") !== "admin") {
+            window.location.href = "login.html";
+        }
+
+        // View Toggling Logic
+        function switchView(viewId, el) {
+            document.querySelectorAll('.view-panel').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(viewId + 'View').classList.add('active');
+            el.classList.add('active');
+            
+            if(viewId === 'occupancy') {
+                renderBuildingMap();
+            } else {
+                loadAll(); // reload data for dashboard summary charts
+            }
+        }
+
+        function renderBuildingMap() {
+            fetch("http://127.0.0.1:5000/rooms")
+            .then(res => res.json())
+            .then(data => {
+                let buildingHtml = "";
+                // Build Floors top-down (3 to 1)
+                for(let floor = 3; floor >= 1; floor--) {
+                    let floorName = floor === 3 ? "Presidential Tier" : floor === 2 ? "Executive Tier" : "Deluxe Tier";
+                    buildingHtml += `<div class="floor-wrapper"><div class="floor-label">Floor ${floor} - ${floorName}</div><div class="hotel-floor">`;
+                    
+                    for(let i = 1; i <= 10; i++) {
+                        let roomNum = `${floor}${i.toString().padStart(2, '0')}`;
+                        let roomObj = data.find(r => r.number === roomNum);
+                        
+                        let litClass = "";
+                        if(roomObj && roomObj.status === 'OCCUPIED') litClass = "lit-yellow";
+                        
+                        buildingHtml += `
+                            <div class="hotel-window ${litClass}">
+                                <div class="window-label">${roomNum}</div>
+                            </div>
+                        `;
+                    }
+                    buildingHtml += `</div></div>`;
+                }
+                document.getElementById('buildingGrid').innerHTML = buildingHtml;
+            });
+        }
+
+        // Clock Update
+        setInterval(() => { document.getElementById('currentTime').innerText = new Date().toLocaleTimeString(); }, 1000);
+
+        // Chart.js Instance
+        let revenueChartInstance = null;
+
+        function renderChart(labels, dataPoints) {
+            if(revenueChartInstance) { revenueChartInstance.destroy(); }
+            
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            let gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(232, 211, 153, 0.4)');   
+            gradient.addColorStop(1, 'rgba(232, 211, 153, 0)');
+
+            revenueChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Revenue (₹)',
+                        data: dataPoints,
+                        borderColor: '#E8D399', backgroundColor: gradient, borderWidth: 3, tension: 0.4, fill: true,
+                        pointBackgroundColor: '#070B19', pointBorderColor: '#E8D399', pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#A3B1C6', font: {size: 10} } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { dash: [4, 4] }, ticks: { color: '#A3B1C6', font: {size: 10} } }
+                    }
+                }
+            });
+        }
+
+        function loadAll() {
+            // Stats
+            fetch("http://127.0.0.1:5000/dashboard_stats")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('revTotal').innerText = data.total_revenue.toLocaleString();
+                document.getElementById('occRate').innerText = data.occupancy_rate;
+                document.getElementById('dirtyRooms').innerText = data.dirty_rooms;
+            });
+
+            // Pending Food Orders directly derived from Staff Feed API
+            fetch("http://127.0.0.1:5000/api/staff/food_orders")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('pendingFood').innerText = (data || []).length;
+            }).catch(e => document.getElementById('pendingFood').innerText = "0");
+
+            // Bookings Table
+            fetch("http://127.0.0.1:5000/recent_bookings")
+            .then(res => res.json())
+            .then(data => {
+                let html = "";
+                data.forEach(b => {
+                    let badge = (b.status === "ACTIVE" || b.status === "CONFIRMED") 
+                        ? `<span style="color:#2ecc71"><i class="fa-solid fa-circle" style="font-size:0.6em;"></i> ${b.status}</span>`
+                        : `<span style="color:var(--text-muted)">${b.status}</span>`;
+                    html += `<tr><td>${b.name}</td><td>${b.number}</td><td>${badge}</td></tr>`;
+                });
+                document.getElementById('bookingsTable').innerHTML = html || `<tr><td colspan="3" class="text-center">No recent bookings</td></tr>`;
+            });
+
+            // Live Activity Feed
+            fetch("http://127.0.0.1:5000/api/admin/live_feed")
+            .then(res => res.json())
+            .then(data => {
+                let html = "";
+                if(!data || data.length === 0) {
+                    html = '<p class="text-center text-muted">No recent operations.</p>';
+                } else {
+                    // Randomize shuffle simulated so it looks live, but backend returns sorted by type due to distinct queries
+                    // Actually, let's just render them as returned
+                    data.forEach(ev => {
+                        let iconClass = "", faClass = "";
+                        if(ev.type === 'BOOKING') { iconClass = "booking"; faClass = "fa-bed"; }
+                        else if(ev.type === 'CLEANING') { iconClass = "cleaning"; faClass = "fa-broom"; }
+                        else if(ev.type === 'DINING') { iconClass = "dining"; faClass = "fa-utensils"; }
+
+                        html += `
+                            <div class="feed-item">
+                                <div class="feed-icon ${iconClass}"><i class="fa-solid ${faClass}"></i></div>
+                                <div>
+                                    <strong style="color: #fff;">${ev.type} UPDATE</strong>
+                                    <p class="text-muted" style="margin: 5px 0 0 0; font-size: 0.9em;">${ev.desc}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                document.getElementById('liveFeed').innerHTML = html;
+            });
+
+            // Dynamic Chart.js Load
+            fetch("http://127.0.0.1:5000/api/admin/revenue_chart")
+            .then(res => res.json())
+            .then(data => { renderChart(data.labels, data.data); })
+            .catch(e => console.error(e));
+
+            // Maintenance Oversight
+            fetch("http://127.0.0.1:5000/api/staff/maintenance_tickets")
+            .then(res => res.json())
+            .then(data => {
+                let html = "";
+                data.forEach(t => {
+                    html += `<div style="border-bottom:1px solid rgba(255,255,255,0.05); padding:10px 0;">
+                                <span class="badge" style="background:rgba(139,92,246,0.2);color:#8b5cf6; font-size:0.7em;">RM ${t.room_number}</span> 
+                                <span style="font-size:0.9em; margin-left:10px;">${t.issue_desc}</span>
+                            </div>`;
+                });
+                if(html) document.getElementById('maintFeed').innerHTML = html;
+                else document.getElementById('maintFeed').innerHTML = '<p class="text-muted text-center" style="font-size:0.9em; margin-top:20px;">Zero structural issues.</p>';
+            });
+
+            // Global Inventory Matrix
+            fetch("http://127.0.0.1:5000/rooms")
+            .then(res => res.json())
+            .then(data => {
+                let html = "";
+                data.forEach(r => {
+                    let statusClass = r.status.toLowerCase();
+                    html += `
+                        <div class="room-block status-${statusClass}">
+                            <h4 style="margin:0 0 5px 0; font-size:1.1em;">${r.number}</h4>
+                            <p class="text-muted" style="margin:0; font-size:0.75em; text-transform:uppercase;">${r.status}</p>
+                        </div>
+                    `;
+                });
+                document.getElementById('roomMatrix').innerHTML = html;
+            });
+        }
+
+        window.onload = () => {
+            loadAll();
+            setInterval(loadAll, 10000); // 10 second live poll
+        };
+    </script>
+</body>
+</html>

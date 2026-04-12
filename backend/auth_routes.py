@@ -21,6 +21,11 @@ def login():
     user = cur.fetchone()
 
     if user:
-        return jsonify({"message":"login success"})
+        return jsonify({
+            "message":"login success",
+            "role": user["role"],
+            "guest_id": user["guest_id"],
+            "username": user["username"]
+        })
     else:
         return jsonify({"message":"invalid credentials"}),401

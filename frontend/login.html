@@ -2,43 +2,108 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Access - Grand Hotel</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
+            background-image: linear-gradient(rgba(7, 11, 25, 0.7), rgba(7, 11, 25, 0.9)), url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            margin: 0;
-            font-family: sans-serif;
-            /* Using a highly reliable Unsplash image link so it never fails */
-            background-image: url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80');
-            background-size: cover;
-            background-position: center;
         }
         .login-card {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            width: 320px;
-            text-align: center;
+            max-width: 450px;
+            width: 100%;
+            padding: 50px 40px;
         }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; background-color: #0d6efd; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; }
+        .tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 30px; }
+        .tab { flex: 1; text-align: center; padding: 15px; cursor: pointer; color: var(--text-muted); font-weight: 600; transition: all 0.3s; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1.5px; }
+        .tab.active { color: var(--primary); border-bottom: 2px solid var(--primary); text-shadow: 0 0 10px rgba(0,242,254,0.4);}
+        .tab:hover { color: #fff; }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <h2>Admin Login</h2>
+
+    <div class="glass-panel login-card animate-up">
+        <div class="text-center mb-4" style="margin-bottom: 30px;">
+            <a href="index.html" style="text-decoration: none;">
+                <h2 class="text-primary" style="font-size: 2.2em; font-weight: 800; letter-spacing: 2px;">SECURE ACCESS</h2>
+            </a>
+            <p class="text-muted" style="margin-top: 10px; font-size: 0.9em;">Access your personalized Grand Hotel experience.</p>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" id="tab-guest" onclick="switchLogin('guest')">Guest</div>
+            <div class="tab" id="tab-staff" onclick="switchLogin('admin')">Admin/Staff</div>
+        </div>
+
         <form id="loginForm">
-            <input type="text" id="username" placeholder="admin" required>
-            <input type="password" id="password" placeholder="Admin Password" required>
-            <button type="submit">Login</button>
+            <input type="hidden" id="roleType" value="guest">
+            
+            <div class="form-group">
+                <label id="userLabel"><i class="fa-solid fa-user"></i> Username</label>
+                <input type="text" id="username" class="form-control" placeholder="Enter username (guest1, admin, staff1)" required autocomplete="off">
+            </div>
+            <div class="form-group" style="margin-bottom: 30px;">
+                <label><i class="fa-solid fa-lock"></i> Password</label>
+                <input type="password" id="password" class="form-control" placeholder="Enter password (pass or admin)" required autocomplete="new-password">
+            </div>
+            
+            <button type="button" onclick="login()" class="btn btn-primary w-100" style="width: 100%; padding: 16px;">
+                Authenticate <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            </button>
+            <p class="error-msg text-center mt-3 text-red" id="error-msg" style="display:none; color: #e74c3c; margin-top: 15px;"></p>
         </form>
-        <p id="error-msg" style="color: red; display: none;">Invalid credentials</p>
     </div>
-    
-    <script src="js/login.js"></script>
+
+    <script>
+        function switchLogin(type) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + (type === 'guest' ? 'guest' : 'staff')).classList.add('active');
+            document.getElementById('roleType').value = type;
+        }
+
+        function login() {
+            let u = document.getElementById('username').value;
+            let p = document.getElementById('password').value;
+
+            fetch("http://127.0.0.1:5000/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: u, password: p })
+            })
+            .then(res => {
+                if(!res.ok) throw new Error("Invalid Credentials");
+                return res.json();
+            })
+            .then(data => {
+                let selectedRole = document.getElementById('roleType').value;
+                if(selectedRole !== 'guest' && data.role === 'guest') {
+                    throw new Error("Unauthorized for Admin Portal.");
+                }
+                
+                localStorage.setItem("userRole", data.role);
+                localStorage.setItem("username", data.username);
+                
+                if (data.role === 'admin') {
+                    window.location.href = "admin_portal.html";
+                } else if (data.role === 'staff') {
+                    window.location.href = "staff_portal.html"; // Dedicated operations portal
+                } else {
+                    window.location.href = "guest_portal.html";
+                }
+            })
+            .catch(e => {
+                let err = document.getElementById('error-msg');
+                err.style.display = 'block';
+                err.innerText = e.message;
+            });
+        }
+    </script>
 </body>
 </html>
