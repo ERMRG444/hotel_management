@@ -1,5 +1,10 @@
 import os
+import sys
 import sqlite3
+
+# Add the backend directory to the python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from database import get_db
