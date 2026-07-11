@@ -383,7 +383,7 @@
 
         // DATA FETCH
         function fetchGuestDetails() {
-            fetch("http://127.0.0.1:5000/guest/details?username=" + currentUser)
+            fetch("/guest/details?username=" + currentUser)
             .then(res => res.json())
             .then(data => {
                 let rc = document.getElementById('roomDetailsContent');
@@ -412,7 +412,7 @@
             let btn = document.getElementById('btnClean');
             btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Dispatching...";
             
-            fetch("http://127.0.0.1:5000/request_cleaning", {
+            fetch("/request_cleaning", {
                 method: "POST", headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({room_number: activeRoom})
             }).then(res => res.json()).then(data => {
@@ -559,7 +559,7 @@
             btn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Submitting...";
             btn.disabled = true;
             
-            fetch("http://127.0.0.1:5000/api/guest/order_food", {
+            fetch("/api/guest/order_food", {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(payload)

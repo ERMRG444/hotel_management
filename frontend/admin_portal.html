@@ -230,7 +230,7 @@
         }
 
         function renderBuildingMap() {
-            fetch("http://127.0.0.1:5000/rooms")
+            fetch("/rooms")
             .then(res => res.json())
             .then(data => {
                 let buildingHtml = "";
@@ -296,7 +296,7 @@
 
         function loadAll() {
             // Stats
-            fetch("http://127.0.0.1:5000/dashboard_stats")
+            fetch("/dashboard_stats")
             .then(res => res.json())
             .then(data => {
                 document.getElementById('revTotal').innerText = data.total_revenue.toLocaleString();
@@ -305,14 +305,14 @@
             });
 
             // Pending Food Orders directly derived from Staff Feed API
-            fetch("http://127.0.0.1:5000/api/staff/food_orders")
+            fetch("/api/staff/food_orders")
             .then(res => res.json())
             .then(data => {
                 document.getElementById('pendingFood').innerText = (data || []).length;
             }).catch(e => document.getElementById('pendingFood').innerText = "0");
 
             // Bookings Table
-            fetch("http://127.0.0.1:5000/recent_bookings")
+            fetch("/recent_bookings")
             .then(res => res.json())
             .then(data => {
                 let html = "";
@@ -326,7 +326,7 @@
             });
 
             // Live Activity Feed
-            fetch("http://127.0.0.1:5000/api/admin/live_feed")
+            fetch("/api/admin/live_feed")
             .then(res => res.json())
             .then(data => {
                 let html = "";
@@ -356,13 +356,13 @@
             });
 
             // Dynamic Chart.js Load
-            fetch("http://127.0.0.1:5000/api/admin/revenue_chart")
+            fetch("/api/admin/revenue_chart")
             .then(res => res.json())
             .then(data => { renderChart(data.labels, data.data); })
             .catch(e => console.error(e));
 
             // Maintenance Oversight
-            fetch("http://127.0.0.1:5000/api/staff/maintenance_tickets")
+            fetch("/api/staff/maintenance_tickets")
             .then(res => res.json())
             .then(data => {
                 let html = "";
@@ -377,7 +377,7 @@
             });
 
             // Global Inventory Matrix
-            fetch("http://127.0.0.1:5000/rooms")
+            fetch("/rooms")
             .then(res => res.json())
             .then(data => {
                 let html = "";

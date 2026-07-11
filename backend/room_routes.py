@@ -8,6 +8,36 @@ room_bp = Blueprint("rooms", __name__)
 def get_rooms():
     conn = get_db()
     cur = conn.cursor()
+    
+    # Auto-checkout logic for past reservations
+    import datetime
+    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+    
+    cur.execute("""
+        SELECT reservations.room_id, reservations.id as res_id, rooms.number as room_number 
+        FROM reservations 
+        JOIN rooms ON reservations.room_id = rooms.id
+        WHERE check_out < ? AND reservations.status IN ('ACTIVE', 'CONFIRMED')
+    """, (today_str,))
+    past_reservations = cur.fetchall()
+    
+    if past_reservations:
+        for res in past_reservations:
+            room_id = res['room_id']
+            res_id = res['res_id']
+            room_number = res['room_number']
+            
+            # Mark reservation as COMPLETED
+            cur.execute("UPDATE reservations SET status='COMPLETED' WHERE id=?", (res_id,))
+            
+            # Mark room as DIRTY
+            cur.execute("UPDATE rooms SET status='DIRTY' WHERE id=?", (room_id,))
+            
+            # Add to cleaning logs
+            cur.execute("INSERT INTO cleaning_logs (room_number, staff_name) VALUES (?, ?)", (room_number, "Auto-Dispatch (Past Checkout)"))
+            
+        conn.commit()
+
     cur.execute("SELECT * FROM rooms")
     rooms = [dict(row) for row in cur.fetchall()]
     conn.close()
@@ -57,11 +87,16 @@ def staff_checkout_room():
     conn = get_db()
     cur = conn.cursor()
     
-    # Get room ID
-    cur.execute("SELECT id FROM rooms WHERE number=?", (room_number,))
+    # Get room ID and status
+    cur.execute("SELECT id, status FROM rooms WHERE number=?", (room_number,))
     room = cur.fetchone()
     if not room:
+        conn.close()
         return jsonify({"success": False, "message": "Room not found"}), 404
+        
+    if room['status'] != 'OCCUPIED':
+        conn.close()
+        return jsonify({"success": False, "message": f"Room {room_number} is not currently occupied/booked."}), 400
         
     # Mark reservation as COMPLETED
     cur.execute("UPDATE reservations SET status='COMPLETED' WHERE room_id=? AND status IN ('CONFIRMED', 'ACTIVE')", (room['id'],))

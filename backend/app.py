@@ -1,8 +1,9 @@
-# Run this in a python shell or add to your app.py startup
+import os
 import sqlite3
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from database import get_db
+from init_db import init_db
 
 from auth_routes import auth_bp
 from room_routes import room_bp
@@ -10,8 +11,21 @@ from booking_routes import booking_bp
 from analytics_routes import analytics_bp
 from maintenance_routes import maintenance_bp
 
-app = Flask(__name__)
+# Ensure database is initialized
+db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "hotel.db")
+if not os.path.exists(db_path):
+    print("Database not found! Initializing hotel.db...")
+    try:
+        init_db(db_path)
+    except Exception as e:
+        print(f"Error initializing database: {e}")
+
+app = Flask(__name__, static_folder="../frontend", static_url_path="")
 CORS(app)
+
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(room_bp)

@@ -8,8 +8,9 @@ from init_db import init_db
 
 @pytest.fixture
 def app():
-    # Create a temporary file to act as the test database
     db_fd, db_path = tempfile.mkstemp()
+    os.close(db_fd)
+
 
     # Pass the database path to our Flask app via config
     flask_app.config.update({
@@ -23,8 +24,11 @@ def app():
     yield flask_app
     
     # Cleanup after test finishes
-    os.close(db_fd)
-    os.unlink(db_path)
+    try:
+        os.unlink(db_path)
+    except OSError:
+        pass
+
 
 @pytest.fixture
 def client(app):

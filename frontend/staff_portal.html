@@ -162,7 +162,7 @@
 
         function loadDashboards() {
             // LOAD HOUSEKEEPING
-            fetch("http://127.0.0.1:5000/rooms")
+            fetch("/rooms")
             .then(res => res.json())
             .then(data => {
                 globalRoomsData = data;
@@ -186,7 +186,7 @@
             });
 
             // LOAD FOOD DELIVERIES
-            fetch("http://127.0.0.1:5000/api/staff/food_orders")
+            fetch("/api/staff/food_orders")
             .then(res => res.json())
             .then(data => {
                 document.getElementById('foodCount').innerText = data.length;
@@ -209,7 +209,7 @@
             });
 
             // LOAD MAINTENANCE TICKETS
-            fetch("http://127.0.0.1:5000/api/staff/maintenance_tickets")
+            fetch("/api/staff/maintenance_tickets")
             .then(res => res.json())
             .then(data => {
                 document.getElementById('maintCount').innerText = data.length;
@@ -234,7 +234,7 @@
 
         function markClean(roomNumber, btnEl) {
             btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Marking...";
-            fetch('http://127.0.0.1:5000/api/log_cleaning', {
+            fetch('/api/log_cleaning', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ staff_name: staffName, room_number: roomNumber })
@@ -248,7 +248,7 @@
 
         function markDelivered(orderId, btnEl) {
             btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Completing...";
-            fetch('http://127.0.0.1:5000/api/staff/food_deliver', {
+            fetch('/api/staff/food_deliver', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ order_id: orderId })
@@ -268,7 +268,7 @@
                 return;
             }
             btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Submitting...";
-            fetch('http://127.0.0.1:5000/api/staff/report_maintenance', {
+            fetch('/api/staff/report_maintenance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ room_number: room, issue_desc: desc, reported_by: staffName })
@@ -282,7 +282,7 @@
 
         function resolveMaintenance(ticketId, btnEl) {
             btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Repairing...";
-            fetch('http://127.0.0.1:5000/api/staff/resolve_maintenance', {
+            fetch('/api/staff/resolve_maintenance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ticket_id: ticketId })
@@ -319,7 +319,7 @@
             }
 
             btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Processing...";
-            fetch('http://127.0.0.1:5000/api/staff/manual_checkin', {
+            fetch('/api/staff/manual_checkin', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -356,7 +356,7 @@
             if(!roomNumber) return;
             
             btnEl.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Wait...";
-            fetch('http://127.0.0.1:5000/api/staff/checkout_room', {
+            fetch('/api/staff/checkout_room', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ room_number: roomNumber })
